@@ -5,12 +5,14 @@ pub mod rsa;
 
 use aes::{AesDecrypted, AesKey, AES};
 pub use error::CryptError;
-use openssl::sha::Sha256;
+use openssl::sha::{Sha256, Sha384, Sha512};
 pub use responses::CiphertextData;
 use rsa::{PublicKey, Signature, RSA};
 use serde::{Deserialize, Serialize};
 
 pub type Sha256Hash = [u8; 32];
+pub type Sha384Hash = [u8; 48];
+pub type Sha512Hash = [u8; 64];
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CryptLib {
@@ -79,6 +81,24 @@ impl CryptLib {
     /// Create a SHA256 hash from buf.
     pub fn sha256(buf: &[u8]) -> Sha256Hash {
         let mut hasher = Sha256::new();
+
+        hasher.update(buf);
+
+        hasher.finish()
+    }
+
+    /// Create a SHA384 hash from buf.
+    pub fn sha384(buf: &[u8]) -> Sha384Hash {
+        let mut hasher = Sha384::new();
+
+        hasher.update(buf);
+
+        hasher.finish()
+    }
+
+    /// Create a SHA512 hash from buf.
+    pub fn sha512(buf: &[u8]) -> Sha512Hash {
+        let mut hasher = Sha512::new();
 
         hasher.update(buf);
 
