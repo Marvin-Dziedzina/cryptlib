@@ -76,6 +76,7 @@ impl CryptLib {
         self.rsa.verify(public_key, data, signature)
     }
 
+    /// Create a SHA256 hash from buf.
     pub fn sha256(buf: &[u8]) -> Sha256Hash {
         let mut hasher = Sha256::new();
 
