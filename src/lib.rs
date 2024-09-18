@@ -1,12 +1,14 @@
 pub mod aes;
-mod error;
-mod responses;
 pub mod rsa;
 
-use aes::{AesDecrypted, AesKey, AES};
+mod error;
+mod responses;
+
 pub use error::CryptError;
-use openssl::sha::{Sha256, Sha384, Sha512};
 pub use responses::CiphertextData;
+
+use aes::{AesDecrypted, AesKey, AES};
+use openssl::sha::{Sha256, Sha384, Sha512};
 use rsa::{PublicKey, Signature, RSA};
 use serde::{Deserialize, Serialize};
 
