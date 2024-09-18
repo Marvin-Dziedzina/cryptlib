@@ -1,9 +1,11 @@
 pub mod aes;
 pub mod rsa;
 
+mod bits;
 mod error;
 mod responses;
 
+pub use bits::Bits;
 pub use error::CryptError;
 pub use responses::CiphertextData;
 
@@ -22,9 +24,9 @@ pub struct CryptLib {
     aes: AES,
 }
 impl CryptLib {
-    pub fn new(bits: u32) -> Result<Self, CryptError> {
+    pub fn new(bits: Bits) -> Result<Self, CryptError> {
         Ok(Self {
-            rsa: RSA::new(bits)?,
+            rsa: RSA::new(bits.to_bits())?,
             aes: AES::new()?,
         })
     }
@@ -114,7 +116,7 @@ mod crypt_lib_tests {
 
     #[test]
     fn crypt_lib_encryption() {
-        let crypt_lib = CryptLib::new(2048).unwrap();
+        let crypt_lib = CryptLib::new(Bits::Bits2048).unwrap();
 
         let data = "Encrypted data!".as_bytes();
         let aad = "AAD data".as_bytes().to_vec();
@@ -133,7 +135,7 @@ mod crypt_lib_tests {
 
     #[test]
     fn crypt_lib_signing() {
-        let crypt_lib = CryptLib::new(2048).unwrap();
+        let crypt_lib = CryptLib::new(Bits::Bits2048).unwrap();
 
         let data = "Test".as_bytes();
 
@@ -148,7 +150,7 @@ mod crypt_lib_tests {
 
     #[test]
     fn crypt_lib_serde() {
-        let crypt_lib = CryptLib::new(2048).unwrap();
+        let crypt_lib = CryptLib::new(Bits::Bits2048).unwrap();
 
         let json = serde_json::to_string(&crypt_lib).unwrap();
 
