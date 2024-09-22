@@ -1,3 +1,5 @@
+use std::fmt::{self, Display};
+
 use openssl::{
     pkey::{PKey, Public},
     rsa::Rsa,
@@ -168,6 +170,21 @@ impl<'de> Deserialize<'de> for PublicKey {
             "PublicKey",
             &["rsa_public_key", "sign_public_key"],
             PublicKeyVisitor,
+        )
+    }
+}
+
+impl Display for PublicKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "RSA KEY: {}; SIGN KEY: {}",
+            String::from_utf8_lossy(&self.get_rsa_key_pem().expect("Could not get rsa key pem!")),
+            String::from_utf8_lossy(
+                &self
+                    .get_sign_key_pem()
+                    .expect("Could not get sign key pem!")
+            )
         )
     }
 }
