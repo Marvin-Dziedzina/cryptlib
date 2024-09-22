@@ -1,4 +1,4 @@
-use std::fmt::{Display};
+use std::fmt::Display;
 
 use openssl::{
     pkey::{PKey, Public},
@@ -46,15 +46,13 @@ impl PublicKey {
     }
 
     pub fn get_rsa_key_der(&self) -> Result<Vec<u8>, CryptError> {
-        self
-            .rsa_key
+        self.rsa_key
             .public_key_to_der()
             .map_err(CryptError::PublicKey)
     }
 
     pub fn get_rsa_key_pem(&self) -> Result<Vec<u8>, CryptError> {
-        self
-            .rsa_key
+        self.rsa_key
             .public_key_to_pem()
             .map_err(CryptError::PublicKey)
     }
@@ -64,15 +62,13 @@ impl PublicKey {
     }
 
     pub fn get_sign_key_der(&self) -> Result<Vec<u8>, CryptError> {
-        self
-            .sign_key
+        self.sign_key
             .public_key_to_der()
             .map_err(CryptError::PublicKey)
     }
 
     pub fn get_sign_key_pem(&self) -> Result<Vec<u8>, CryptError> {
-        self
-            .sign_key
+        self.sign_key
             .public_key_to_pem()
             .map_err(CryptError::PublicKey)
     }
