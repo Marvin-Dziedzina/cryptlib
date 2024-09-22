@@ -30,11 +30,11 @@ impl RSA {
     /// Create a new instance of `RSA`. Use 2048 bits for default.
     pub fn new(bits: u32) -> Result<Self, CryptError> {
         // Generate private and public RSA key
-        let keys = Rsa::generate(bits).map_err(|e| CryptError::RsaError(e))?;
+        let keys = Rsa::generate(bits).map_err(CryptError::RsaError)?;
 
         // Generate signing keys
-        let rsa_keys = Rsa::generate(bits).map_err(|e| CryptError::RsaError(e))?;
-        let sign_keys = PKey::from_rsa(rsa_keys).map_err(|e| CryptError::RsaError(e))?;
+        let rsa_keys = Rsa::generate(bits).map_err(CryptError::RsaError)?;
+        let sign_keys = PKey::from_rsa(rsa_keys).map_err(CryptError::RsaError)?;
 
         Ok(Self { keys, sign_keys })
     }
@@ -45,9 +45,9 @@ impl RSA {
         sign_private_pem: Vec<u8>,
     ) -> Result<Self, CryptError> {
         let keys =
-            Rsa::private_key_from_pem(&rsa_private_pem).map_err(|e| CryptError::RsaError(e))?;
+            Rsa::private_key_from_pem(&rsa_private_pem).map_err(CryptError::RsaError)?;
         let sign_keys =
-            PKey::private_key_from_pem(&sign_private_pem).map_err(|e| CryptError::SignError(e))?;
+            PKey::private_key_from_pem(&sign_private_pem).map_err(CryptError::SignError)?;
 
         Ok(Self { keys, sign_keys })
     }
@@ -58,21 +58,21 @@ impl RSA {
         let rsa_public_key_der = self
             .keys
             .public_key_to_der()
-            .map_err(|e| CryptError::RsaError(e))?;
+            .map_err(CryptError::RsaError)?;
 
         // Get public sign key from sign_keys
         let sign_public_key_der = self
             .sign_keys
             .public_key_to_der()
-            .map_err(|e| CryptError::SignError(e))?;
+            .map_err(CryptError::SignError)?;
 
         // Create `PublicKey` instance
-        Ok(PublicKey::new(
+        PublicKey::new(
             &rsa_public_key_der,
             KeyFormat::DER,
             &sign_public_key_der,
             KeyFormat::DER,
-        )?)
+        )
     }
 
     /// Encrypt data
@@ -88,7 +88,7 @@ impl RSA {
         receiver_public_key
             .get_rsa_key()
             .public_encrypt(data, &mut ciphertext, Padding::PKCS1_OAEP)
-            .map_err(|e| CryptError::RsaError(e))?;
+            .map_err(CryptError::RsaError)?;
 
         // Create `RsaCiphertext` instance
         Ok(RsaCiphertext::new(ciphertext))
@@ -105,7 +105,7 @@ impl RSA {
         let count = &self
             .keys
             .private_decrypt(&ciphertext, &mut data, Padding::PKCS1_OAEP)
-            .map_err(|e| CryptError::RsaError(e))?;
+            .map_err(CryptError::RsaError)?;
 
         // Slice decripted data to count of bytes decrypted
         Ok(data[0..count.to_owned()].to_vec())
@@ -115,13 +115,13 @@ impl RSA {
     pub fn sign(&self, data: &[u8]) -> Result<Signature, CryptError> {
         // Create `signer`
         let mut signer = Signer::new(MessageDigest::sha512(), &self.sign_keys)
-            .map_err(|e| CryptError::SignError(e))?;
+            .map_err(CryptError::SignError)?;
 
         // Add data to be signed
-        signer.update(data).map_err(|e| CryptError::SignError(e))?;
+        signer.update(data).map_err(CryptError::SignError)?;
 
         // Sign
-        let signature = signer.sign_to_vec().map_err(|e| CryptError::SignError(e))?;
+        let signature = signer.sign_to_vec().map_err(CryptError::SignError)?;
 
         Ok(Signature::new(signature))
     }
@@ -135,17 +135,17 @@ impl RSA {
     ) -> Result<bool, CryptError> {
         // Create `verifier`
         let mut verifier = Verifier::new(MessageDigest::sha512(), public_key.get_sign_key())
-            .map_err(|e| CryptError::SignError(e))?;
+            .map_err(CryptError::SignError)?;
 
         // Add data to be verified
         verifier
             .update(data)
-            .map_err(|e| CryptError::SignError(e))?;
+            .map_err(CryptError::SignError)?;
 
         // Verify data with signature
-        Ok(verifier
+        verifier
             .verify(&signature.get_signature())
-            .map_err(|e| CryptError::SignError(e))?)
+            .map_err(CryptError::SignError)
     }
 }
 
@@ -224,11 +224,9 @@ impl<'de> Deserialize<'de> for RSA {
                 let private_sign_key =
                     private_sign_key.ok_or_else(|| de::Error::missing_field("private_sign_key"))?;
 
-                Ok(
-                    RSA::from_private_key_pems(private_key, private_sign_key).map_err(|e| {
+                RSA::from_private_key_pems(private_key, private_sign_key).map_err(|e| {
                         de::Error::custom(format!("Could not initialize RSA! Error: {}", e))
-                    })?,
-                )
+                    })
             }
         }
 
@@ -269,7 +267,7 @@ mod rsa_tests {
         // Verify
         let is_valid = rsa.verify(&pub_key, data, signature).unwrap();
 
-        assert_eq!(true, is_valid);
+        assert!(is_valid);
     }
 
     #[test]

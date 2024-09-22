@@ -145,7 +145,7 @@ mod crypt_lib_tests {
             .verify(&crypt_lib.get_public_keys().unwrap(), data, signature)
             .unwrap();
 
-        assert_eq!(true, result);
+        assert!(result);
     }
 
     #[test]

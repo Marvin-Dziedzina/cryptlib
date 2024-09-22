@@ -30,7 +30,7 @@ impl AesKey {
         };
 
         let mut key: [u8; 32] = [0; 32];
-        key.clone_from_slice(&vec);
+        key.clone_from_slice(vec);
 
         Ok(Self { key })
     }
@@ -43,7 +43,7 @@ impl AesKey {
     /// Generate a 32 byte random key.
     fn generate_key_32bytes() -> Result<[u8; 32], CryptError> {
         let mut key = [0; 32];
-        rand_bytes(&mut key).map_err(|e| CryptError::RandError(e))?;
+        rand_bytes(&mut key).map_err(CryptError::RandError)?;
 
         Ok(key)
     }

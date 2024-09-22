@@ -87,7 +87,7 @@ impl AES {
             data,
             &mut tag,
         )
-        .map_err(|e| CryptError::AesError(e))?;
+        .map_err(CryptError::AesError)?;
 
         Ok(AesCiphertext::new(ciphertext, iv, aad, tag))
     }
@@ -113,7 +113,7 @@ impl AES {
             &ciphertext,
             &tag,
         )
-        .map_err(|e| CryptError::AesError(e))?;
+        .map_err(CryptError::AesError)?;
 
         Ok(AesDecrypted::new(data, aad))
     }
@@ -121,7 +121,7 @@ impl AES {
     /// Generate a 16 byte random iv.
     fn generate_iv_16bytes() -> Result<[u8; 16], CryptError> {
         let mut key: [u8; 16] = [0; 16];
-        rand_bytes(&mut key).map_err(|e| CryptError::RandError(e))?;
+        rand_bytes(&mut key).map_err(CryptError::RandError)?;
 
         Ok(key)
     }
@@ -185,7 +185,7 @@ impl<'de> Deserialize<'de> for AES {
                 }
 
                 let raw_key = raw_key.ok_or_else(|| {
-                    de::Error::custom(format!("Could not unwrap aes key from Option!"))
+                    de::Error::custom("Could not unwrap aes key from Option!".to_string())
                 })?;
 
                 if raw_key.len() != 32 {
@@ -196,7 +196,7 @@ impl<'de> Deserialize<'de> for AES {
                 }
 
                 Ok(AES::from_key_bytes(raw_key.try_into().map_err(|_| {
-                    de::Error::custom(format!("Could not convert bytes to AES key!"))
+                    de::Error::custom("Could not convert bytes to AES key!".to_string())
                 })?))
             }
         }

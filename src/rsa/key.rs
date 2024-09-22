@@ -1,4 +1,4 @@
-use std::fmt::{self, Display};
+use std::fmt::{Display};
 
 use openssl::{
     pkey::{PKey, Public},
@@ -30,13 +30,13 @@ impl PublicKey {
             KeyFormat::DER => Rsa::public_key_from_der(rsa_public_key),
             KeyFormat::PEM => Rsa::public_key_from_pem(rsa_public_key),
         }
-        .map_err(|e| CryptError::PublicKey(e))?;
+        .map_err(CryptError::PublicKey)?;
 
         let sign_key = match sign_public_key_format {
             KeyFormat::DER => PKey::public_key_from_der(sign_public_key),
             KeyFormat::PEM => PKey::public_key_from_pem(sign_public_key),
         }
-        .map_err(|e| CryptError::PublicKey(e))?;
+        .map_err(CryptError::PublicKey)?;
 
         Ok(Self { rsa_key, sign_key })
     }
@@ -46,17 +46,17 @@ impl PublicKey {
     }
 
     pub fn get_rsa_key_der(&self) -> Result<Vec<u8>, CryptError> {
-        Ok(self
+        self
             .rsa_key
             .public_key_to_der()
-            .map_err(|e| CryptError::PublicKey(e))?)
+            .map_err(CryptError::PublicKey)
     }
 
     pub fn get_rsa_key_pem(&self) -> Result<Vec<u8>, CryptError> {
-        Ok(self
+        self
             .rsa_key
             .public_key_to_pem()
-            .map_err(|e| CryptError::PublicKey(e))?)
+            .map_err(CryptError::PublicKey)
     }
 
     pub fn get_sign_key(&self) -> &PKey<Public> {
@@ -64,17 +64,17 @@ impl PublicKey {
     }
 
     pub fn get_sign_key_der(&self) -> Result<Vec<u8>, CryptError> {
-        Ok(self
+        self
             .sign_key
             .public_key_to_der()
-            .map_err(|e| CryptError::PublicKey(e))?)
+            .map_err(CryptError::PublicKey)
     }
 
     pub fn get_sign_key_pem(&self) -> Result<Vec<u8>, CryptError> {
-        Ok(self
+        self
             .sign_key
             .public_key_to_pem()
-            .map_err(|e| CryptError::PublicKey(e))?)
+            .map_err(CryptError::PublicKey)
     }
 }
 
@@ -156,13 +156,13 @@ impl<'de> Deserialize<'de> for PublicKey {
                 let sign_public_key =
                     sign_public_key.ok_or_else(|| de::Error::missing_field("sign_public_key"))?;
 
-                Ok(PublicKey::new(
+                PublicKey::new(
                     &rsa_public_key,
                     KeyFormat::PEM,
                     &sign_public_key,
                     KeyFormat::PEM,
                 )
-                .map_err(|e| de::Error::custom(format!("{}", e)))?)
+                .map_err(|e| de::Error::custom(format!("{}", e)))
             }
         }
 
