@@ -69,3 +69,51 @@ impl EncryptedAesKey {
         self.encrypted_key
     }
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_aes_key_new() {
+        let aes_key = AesKey::new();
+        assert!(aes_key.is_ok());
+        let key = aes_key.unwrap().get_bytes();
+        assert_eq!(key.len(), 32);
+    }
+
+    #[test]
+    fn test_aes_key_from_bytes() {
+        let bytes = [1u8; 32];
+        let aes_key = AesKey::from_bytes(bytes);
+        assert_eq!(aes_key.get_bytes(), bytes);
+    }
+
+    #[test]
+    fn test_aes_key_from_vec_valid() {
+        let vec = vec![1u8; 32];
+        let aes_key = AesKey::from_vec(&vec);
+        assert!(aes_key.is_ok());
+        assert_eq!(aes_key.unwrap().get_bytes(), [1u8; 32]);
+    }
+
+    #[test]
+    fn test_aes_key_from_vec_invalid() {
+        let vec = vec![1u8; 31];
+        let aes_key = AesKey::from_vec(&vec);
+        assert!(aes_key.is_err());
+    }
+
+    #[test]
+    fn test_aes_key_clone() {
+        let aes_key = AesKey::new().unwrap();
+        let cloned_key = aes_key.clone();
+        assert_eq!(aes_key.get_bytes(), cloned_key.get_bytes());
+    }
+
+    #[test]
+    fn test_encrypted_aes_key_new() {
+        let encrypted_key = String::from("encrypted_key");
+        let encrypted_aes_key = EncryptedAesKey::new(encrypted_key.clone());
+        assert_eq!(encrypted_aes_key.get_component(), encrypted_key);
+    }
+}

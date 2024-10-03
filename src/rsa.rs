@@ -44,8 +44,7 @@ impl RSA {
         rsa_private_pem: Vec<u8>,
         sign_private_pem: Vec<u8>,
     ) -> Result<Self, CryptError> {
-        let keys =
-            Rsa::private_key_from_pem(&rsa_private_pem).map_err(CryptError::RsaError)?;
+        let keys = Rsa::private_key_from_pem(&rsa_private_pem).map_err(CryptError::RsaError)?;
         let sign_keys =
             PKey::private_key_from_pem(&sign_private_pem).map_err(CryptError::SignError)?;
 
@@ -96,7 +95,7 @@ impl RSA {
 
     /// Decrypt data
     pub fn decrypt(&self, rsa_ciphertext: RsaCiphertext) -> Result<Vec<u8>, CryptError> {
-        let ciphertext = rsa_ciphertext.get_components();
+        let ciphertext = rsa_ciphertext.get_component();
 
         // Data buffer
         let mut data = vec![0; self.keys.size() as usize];
@@ -114,8 +113,8 @@ impl RSA {
     /// Sign data
     pub fn sign(&self, data: &[u8]) -> Result<Signature, CryptError> {
         // Create `signer`
-        let mut signer = Signer::new(MessageDigest::sha512(), &self.sign_keys)
-            .map_err(CryptError::SignError)?;
+        let mut signer =
+            Signer::new(MessageDigest::sha512(), &self.sign_keys).map_err(CryptError::SignError)?;
 
         // Add data to be signed
         signer.update(data).map_err(CryptError::SignError)?;
@@ -138,9 +137,7 @@ impl RSA {
             .map_err(CryptError::SignError)?;
 
         // Add data to be verified
-        verifier
-            .update(data)
-            .map_err(CryptError::SignError)?;
+        verifier.update(data).map_err(CryptError::SignError)?;
 
         // Verify data with signature
         verifier
@@ -225,8 +222,8 @@ impl<'de> Deserialize<'de> for RSA {
                     private_sign_key.ok_or_else(|| de::Error::missing_field("private_sign_key"))?;
 
                 RSA::from_private_key_pems(private_key, private_sign_key).map_err(|e| {
-                        de::Error::custom(format!("Could not initialize RSA! Error: {}", e))
-                    })
+                    de::Error::custom(format!("Could not initialize RSA! Error: {}", e))
+                })
             }
         }
 
@@ -236,6 +233,8 @@ impl<'de> Deserialize<'de> for RSA {
 
 #[cfg(test)]
 mod rsa_tests {
+    use rsa::RsaCiphertext;
+
     use crate::*;
 
     #[test]
@@ -279,5 +278,77 @@ mod rsa_tests {
         let _: RSA = serde_json::from_str(&json).unwrap();
 
         assert_eq!(true, true);
+    }
+
+    #[test]
+    fn rsa_invalid_decrypt() {
+        let data = b"Some data to encrypt";
+
+        let rsa = RSA::new(2048).unwrap();
+
+        // Create a new RSA instance with different keys
+        let rsa_new = RSA::new(2048).unwrap();
+        let pub_key = rsa_new.get_public_keys().unwrap();
+
+        // Encrypt
+        let ciphertext = rsa.encrypt(&pub_key, data).unwrap();
+        let mut cipher_bytes = ciphertext.get_component();
+        cipher_bytes.push(5);
+
+        // Attempt to decrypt with different keys
+        let result = rsa_new.decrypt(RsaCiphertext::new(cipher_bytes));
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn rsa_invalid_verify() {
+        let data = b"Some data to sign";
+
+        let rsa = RSA::new(2048).unwrap();
+
+        // Sign
+        let signature = rsa.sign(data).unwrap();
+
+        // Create a new RSA instance with different keys
+        let rsa_new = RSA::new(2048).unwrap();
+        let pub_key_new = rsa_new.get_public_keys().unwrap();
+
+        // Attempt to verify with different public key
+        let is_valid = rsa.verify(&pub_key_new, data, signature).unwrap();
+
+        assert!(!is_valid);
+    }
+
+    #[test]
+    fn rsa_encrypt_decrypt_large_data() {
+        let data = vec![0u8; 190]; // Large data close to the limit for 2048-bit RSA with PKCS1_OAEP padding
+
+        let rsa = RSA::new(2048).unwrap();
+        let pub_key = rsa.get_public_keys().unwrap();
+
+        // Encrypt
+        let ciphertext = rsa.encrypt(&pub_key, &data).unwrap();
+
+        // Decrypt
+        let out = rsa.decrypt(ciphertext).unwrap();
+
+        assert_eq!(data, out);
+    }
+
+    #[test]
+    fn rsa_sign_verify_large_data() {
+        let data = vec![0u8; 1024]; // Large data for signing
+
+        let rsa = RSA::new(2048).unwrap();
+        let pub_key = rsa.get_public_keys().unwrap();
+
+        // Sign
+        let signature = rsa.sign(&data).unwrap();
+
+        // Verify
+        let is_valid = rsa.verify(&pub_key, &data, signature).unwrap();
+
+        assert!(is_valid);
     }
 }

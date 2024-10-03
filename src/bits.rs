@@ -16,3 +16,23 @@ impl Bits {
         }
     }
 }
+#[cfg(test)]
+mod tests {
+    use crate::Bits;
+
+    #[test]
+    fn test_bits_to_bits() {
+        assert_eq!(Bits::Bits1024.to_bits(), 1024);
+        assert_eq!(Bits::Bits2048.to_bits(), 2048);
+        assert_eq!(Bits::Bits3072.to_bits(), 3072);
+        assert_eq!(Bits::Bits4096.to_bits(), 4096);
+        assert_eq!(Bits::Custom(512).to_bits(), 512);
+        assert_eq!(Bits::Custom(8192).to_bits(), 8192);
+    }
+
+    #[test]
+    fn test_custom_bits() {
+        let custom_bits = Bits::Custom(16384);
+        assert_eq!(custom_bits.to_bits(), 16384);
+    }
+}

@@ -112,6 +112,8 @@ impl CryptLib {
 
 #[cfg(test)]
 mod crypt_lib_tests {
+    use rsa::RsaCiphertext;
+
     use super::*;
 
     #[test]
@@ -211,5 +213,69 @@ mod crypt_lib_tests {
                 17, 120, 240, 45, 253, 244, 44, 41, 176, 119, 162, 220
             ]
         );
+    }
+
+    #[test]
+    fn crypt_lib_encryption_different_key_sizes() {
+        let crypt_lib_2048 = CryptLib::new(Bits::Bits2048).unwrap();
+        let crypt_lib_4096 = CryptLib::new(Bits::Bits4096).unwrap();
+
+        let data = "Encrypted data!".as_bytes();
+        let aad = "AAD data".as_bytes().to_vec();
+
+        let ciphertext_2048 = crypt_lib_2048
+            .encrypt(&crypt_lib_2048.get_public_keys().unwrap(), data, aad.clone())
+            .unwrap();
+        let decrypted_2048 = crypt_lib_2048.decrypt(ciphertext_2048).unwrap();
+        let (data_dec_2048, aad_dec_2048) = decrypted_2048.get_components();
+        assert_eq!(data, data_dec_2048);
+        assert_eq!(aad, aad_dec_2048);
+
+        let ciphertext_4096 = crypt_lib_4096
+            .encrypt(&crypt_lib_4096.get_public_keys().unwrap(), data, aad.clone())
+            .unwrap();
+        let decrypted_4096 = crypt_lib_4096.decrypt(ciphertext_4096).unwrap();
+        let (data_dec_4096, aad_dec_4096) = decrypted_4096.get_components();
+        assert_eq!(data, data_dec_4096);
+        assert_eq!(aad, aad_dec_4096);
+    }
+
+    #[test]
+    fn crypt_lib_decryption_failure() {
+        let crypt_lib = CryptLib::new(Bits::Bits2048).unwrap();
+
+        let data = "Encrypted data!".as_bytes();
+        let aad = "AAD data".as_bytes().to_vec();
+
+        let ciphertext = crypt_lib
+            .encrypt(&crypt_lib.get_public_keys().unwrap(), data, aad.clone())
+            .unwrap();
+
+        // Tamper with the ciphertext
+        let mut tampered_ciphertext = ciphertext.clone();
+        let (rsa_cyphertext, aes_cypertext) = tampered_ciphertext.get_components();
+        let mut rsa_cypherthext_bytes = rsa_cyphertext.get_component();
+        rsa_cypherthext_bytes.push(5);
+        tampered_ciphertext = CiphertextData::new(RsaCiphertext::new(rsa_cypherthext_bytes), aes_cypertext);
+
+
+        let result = crypt_lib.decrypt(tampered_ciphertext);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn crypt_lib_signing_verification_failure() {
+        let crypt_lib = CryptLib::new(Bits::Bits2048).unwrap();
+
+        let data = "Test".as_bytes();
+        let wrong_data = "Wrong Test".as_bytes();
+
+        let signature = crypt_lib.sign(data).unwrap();
+
+        let result = crypt_lib
+            .verify(&crypt_lib.get_public_keys().unwrap(), wrong_data, signature)
+            .unwrap();
+
+        assert!(!result);
     }
 }

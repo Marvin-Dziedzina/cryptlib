@@ -194,6 +194,8 @@ pub enum KeyFormat {
 
 #[cfg(test)]
 mod public_key_tests {
+    use rsa::KeyFormat;
+
     use crate::*;
 
     #[test]
@@ -237,5 +239,58 @@ mod public_key_tests {
     fn get_pub_key() -> Result<PublicKey, CryptError> {
         let rsa = RSA::new(2048)?;
         rsa.get_public_keys()
+    }
+
+    #[test]
+    fn public_key_display() {
+        let public_key = get_pub_key().unwrap();
+        let display_string = format!("{}", public_key);
+        assert!(display_string.contains("RSA KEY:"));
+        assert!(display_string.contains("SIGN KEY:"));
+    }
+
+    #[test]
+    fn public_key_new_with_invalid_rsa_key() {
+        let invalid_rsa_key = b"invalid_rsa_key";
+        let sign_key = get_pub_key().unwrap().get_sign_key_pem().unwrap();
+        let result = PublicKey::new(invalid_rsa_key, KeyFormat::PEM, &sign_key, KeyFormat::PEM);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn public_key_new_with_invalid_sign_key() {
+        let rsa_key = get_pub_key().unwrap().get_rsa_key_pem().unwrap();
+        let invalid_sign_key = b"invalid_sign_key";
+        let result = PublicKey::new(&rsa_key, KeyFormat::PEM, invalid_sign_key, KeyFormat::PEM);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn public_key_serialize_deserialize() {
+        let public_key = get_pub_key().unwrap();
+        let serialized = serde_json::to_string(&public_key).unwrap();
+        let deserialized: PublicKey = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(
+            public_key.get_rsa_key_pem().unwrap(),
+            deserialized.get_rsa_key_pem().unwrap()
+        );
+        assert_eq!(
+            public_key.get_sign_key_pem().unwrap(),
+            deserialized.get_sign_key_pem().unwrap()
+        );
+    }
+
+    #[test]
+    fn public_key_get_rsa_key() {
+        let public_key = get_pub_key().unwrap();
+        let rsa_key = public_key.get_rsa_key();
+        assert!(rsa_key.public_key_to_pem().is_ok());
+    }
+
+    #[test]
+    fn public_key_get_sign_key() {
+        let public_key = get_pub_key().unwrap();
+        let sign_key = public_key.get_sign_key();
+        assert!(sign_key.public_key_to_pem().is_ok());
     }
 }

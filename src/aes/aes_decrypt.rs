@@ -13,3 +13,44 @@ impl AesDecrypted {
         (self.data, self.aad)
     }
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_aes_decrypted_new() {
+        let data = vec![1, 2, 3, 4];
+        let aad = vec![5, 6, 7, 8];
+        let decrypted = AesDecrypted::new(data.clone(), aad.clone());
+        assert_eq!(decrypted.data, data);
+        assert_eq!(decrypted.aad, aad);
+    }
+
+    #[test]
+    fn test_aes_decrypted_get_components() {
+        let data = vec![1, 2, 3, 4];
+        let aad = vec![5, 6, 7, 8];
+        let decrypted = AesDecrypted::new(data.clone(), aad.clone());
+        let (d, a) = decrypted.get_components();
+        assert_eq!(d, data);
+        assert_eq!(a, aad);
+    }
+
+    #[test]
+    fn test_aes_decrypted_empty() {
+        let data = vec![];
+        let aad = vec![];
+        let decrypted = AesDecrypted::new(data.clone(), aad.clone());
+        assert_eq!(decrypted.data, data);
+        assert_eq!(decrypted.aad, aad);
+    }
+
+    #[test]
+    fn test_aes_decrypted_large_data() {
+        let data = vec![0; 1024];
+        let aad = vec![1; 1024];
+        let decrypted = AesDecrypted::new(data.clone(), aad.clone());
+        assert_eq!(decrypted.data, data);
+        assert_eq!(decrypted.aad, aad);
+    }
+}
