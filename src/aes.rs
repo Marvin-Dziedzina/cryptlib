@@ -62,13 +62,16 @@ impl AES {
         self.key = key;
     }
 
-    /// Encrypt data.
+    /// Encrypt data with the internal AES key.
     /// `aad` is additional data that is not encrypted but is protected against tampering.
     /// `aad` has no size limit.
     pub fn encrypt(&self, data: &[u8], aad: Vec<u8>) -> Result<AesCiphertext, CryptError> {
         self.encrypt_from_key(data, aad, &self.get_key())
     }
 
+    /// Encrypt data with a given key.
+    /// `aad` is additional data that is not encrypted but is protected against tampering.
+    /// `aad` has no size limit.
     pub fn encrypt_from_key(
         &self,
         data: &[u8],
@@ -92,11 +95,12 @@ impl AES {
         Ok(AesCiphertext::new(ciphertext, iv, aad, tag))
     }
 
-    /// Decript data.
+    /// Decript data with the internal AES key.
     pub fn decrypt(&self, ciphertext: AesCiphertext) -> Result<AesDecrypted, CryptError> {
         self.decrypt_from_key(ciphertext, &self.get_key())
     }
 
+    /// Decrypt data with a given key.
     pub fn decrypt_from_key(
         &self,
         ciphertext: AesCiphertext,
