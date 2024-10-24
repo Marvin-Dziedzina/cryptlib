@@ -68,7 +68,7 @@
 
 pub mod aes;
 pub mod rsa;
-pub mod sha;
+pub mod hash;
 
 mod error;
 mod responses;

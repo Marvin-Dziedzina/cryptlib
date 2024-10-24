@@ -1,4 +1,4 @@
-use std::{error::Error, fmt::Display};
+use std::{array::TryFromSliceError, error::Error, fmt::Display};
 
 use openssl::error::ErrorStack;
 
@@ -11,8 +11,10 @@ pub enum CryptError {
     AesCipherError(String),
     SignError(ErrorStack),
     PublicKey(ErrorStack),
+    HashError(ErrorStack),
     RandError(ErrorStack),
     IoError(std::io::Error),
+    TryFromSliceError(TryFromSliceError),
     InvalidHashLength,
 }
 
@@ -25,8 +27,10 @@ impl Display for CryptError {
             CryptError::AesCipherError(e) => write!(f, "AES Cipher Error: {}", e),
             CryptError::SignError(e) => write!(f, "Sign Error: {}", e),
             CryptError::PublicKey(e) => write!(f, "Public Key Error: {}", e),
+            CryptError::HashError(e) => write!(f, "Hash Error: {}", e),
             CryptError::RandError(e) => write!(f, "Rand Error: {}", e),
             CryptError::IoError(e) => write!(f, "IO Error: {}", e),
+            CryptError::TryFromSliceError(e) => write!(f, "TryFromSlice Error: {}", e),
             CryptError::InvalidHashLength => write!(f, "Invalid Hash Length"),
         }
     }
