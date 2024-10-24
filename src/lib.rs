@@ -8,6 +8,8 @@ mod bits;
 mod error;
 mod responses;
 
+use std::io::{Read, Write};
+
 pub use bits::Bits;
 pub use error::CryptError;
 pub use responses::CiphertextData;
@@ -52,14 +54,62 @@ impl CryptLib {
         &self,
         receiver_public_key: &PublicKey,
         data: &[u8],
-        aad: Vec<u8>,
+        aad: &[u8],
     ) -> Result<CiphertextData, CryptError> {
-        let aes_ciphertext = self.aes.encrypt(data, aad)?;
-        let aes_key = self
+        self.encrypt_composite_with_aes_key(receiver_public_key, &self.aes.get_key(), data, aad)
+    }
+
+    /// Encrypt `data` with AES key. `aad` are additional bytes that are **NOT** encrypted but cant be altered.
+    /// Composite meaning that the actual data is encrypted with AES and the AES key is encrypted with RSA.
+    pub fn encrypt_composite_with_aes_key(
+        &self,
+        receiver_public_key: &PublicKey,
+        aes_key: &AesKey,
+        data: &[u8],
+        aad: &[u8],
+    ) -> Result<CiphertextData, CryptError> {
+        let aes_ciphertext = self.aes.encrypt_with_key(data, aad, aes_key)?;
+        let encrypted_aes_key = self
             .rsa
             .encrypt(receiver_public_key, &self.aes.get_key().get_bytes())?;
 
-        Ok(CiphertextData::new(aes_key, aes_ciphertext))
+        Ok(CiphertextData::new(encrypted_aes_key, aes_ciphertext))
+    }
+
+    pub fn encrypt_composite_stream<R: Read, W: Write>(
+        &self,
+        receiver_public_key: &PublicKey,
+        reader: R,
+        writer: W,
+        aad: &[u8],
+    ) -> Result<CiphertextData, CryptError> {
+        self.encrypt_composite_stream_with_aes_key(
+            receiver_public_key,
+            &self.aes.get_key(),
+            reader,
+            writer,
+            aad,
+        )
+    }
+
+    /// Encrypt a stream. `aad` are additional bytes that are **NOT** encrypted but cant be altered.
+    /// Composite meaning that the actual data is encrypted with AES and the AES key is encrypted with RSA.
+    pub fn encrypt_composite_stream_with_aes_key<R: Read, W: Write>(
+        &self,
+        receiver_public_key: &PublicKey,
+        aes_key: &AesKey,
+        reader: R,
+        writer: W,
+        aad: &[u8],
+    ) -> Result<CiphertextData, CryptError> {
+        let (_, aes_ciphertext) = self
+            .aes
+            .encrypt_stream_with_key(reader, writer, aes_key, aad)?;
+        let encrypted_aes_key = self
+            .rsa
+            .encrypt(receiver_public_key, &self.aes.get_key().get_bytes())?;
+
+        Ok(CiphertextData::new(encrypted_aes_key, aes_ciphertext))
     }
 
     /// Decrypt `CiphertextData` composite.
@@ -73,6 +123,22 @@ impl CryptLib {
         let aes_key = AesKey::from_vec(&self.rsa.decrypt(rsa_ciphertext)?)?;
 
         self.aes.decrypt_with_key(aes_ciphertext, &aes_key)
+    }
+
+    /// Decrypt a stream. `aad` are additional bytes that are **NOT** encrypted but cant be altered.
+    /// Composite meaning that the actual data is encrypted with AES and the AES key is encrypted with RSA.
+    pub fn decrypt_composite_stream<R: Read, W: Write>(
+        &self,
+        ciphertext: CiphertextData,
+        reader: R,
+        writer: W,
+    ) -> Result<(usize, AesDecrypted), CryptError> {
+        let (rsa_ciphertext, aes_ciphertext) = ciphertext.get_components();
+
+        let aes_key = AesKey::from_vec(&self.rsa.decrypt(rsa_ciphertext)?)?;
+
+        self.aes
+            .decrypt_stream_with_key(reader, writer, &aes_key, aes_ciphertext)
     }
 
     /// Sign data
@@ -105,7 +171,7 @@ mod crypt_lib_tests {
         let aad = "AAD data".as_bytes().to_vec();
 
         let ciphertext = crypt_lib
-            .encrypt_composite(&crypt_lib.get_public_keys().unwrap(), data, aad.clone())
+            .encrypt_composite(&crypt_lib.get_public_keys().unwrap(), data, &aad)
             .unwrap();
 
         let decrypted = crypt_lib.decrypt_composite(ciphertext).unwrap();
@@ -149,11 +215,7 @@ mod crypt_lib_tests {
         let aad = "AAD data".as_bytes().to_vec();
 
         let ciphertext_2048 = crypt_lib_2048
-            .encrypt_composite(
-                &crypt_lib_2048.get_public_keys().unwrap(),
-                data,
-                aad.clone(),
-            )
+            .encrypt_composite(&crypt_lib_2048.get_public_keys().unwrap(), data, &aad)
             .unwrap();
         let decrypted_2048 = crypt_lib_2048.decrypt_composite(ciphertext_2048).unwrap();
         let (data_dec_2048, aad_dec_2048) = decrypted_2048.get_components();
@@ -161,11 +223,7 @@ mod crypt_lib_tests {
         assert_eq!(aad, aad_dec_2048);
 
         let ciphertext_4096 = crypt_lib_4096
-            .encrypt_composite(
-                &crypt_lib_4096.get_public_keys().unwrap(),
-                data,
-                aad.clone(),
-            )
+            .encrypt_composite(&crypt_lib_4096.get_public_keys().unwrap(), data, &aad)
             .unwrap();
         let decrypted_4096 = crypt_lib_4096.decrypt_composite(ciphertext_4096).unwrap();
         let (data_dec_4096, aad_dec_4096) = decrypted_4096.get_components();
@@ -181,7 +239,7 @@ mod crypt_lib_tests {
         let aad = "AAD data".as_bytes().to_vec();
 
         let ciphertext = crypt_lib
-            .encrypt_composite(&crypt_lib.get_public_keys().unwrap(), data, aad.clone())
+            .encrypt_composite(&crypt_lib.get_public_keys().unwrap(), data, &aad)
             .unwrap();
 
         // Tamper with the ciphertext

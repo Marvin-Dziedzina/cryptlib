@@ -30,6 +30,7 @@ mod tests {
     fn test_ciphertext_data_creation() {
         let rsa_ciphertext = RsaCiphertext::new(vec![1, 2, 3, 4]);
         let aes_ciphertext = AesCiphertext::new(
+            false,
             vec![5, 6, 7, 8],
             Iv::new().unwrap(),
             vec![9, 10, 11, 12],
@@ -45,6 +46,7 @@ mod tests {
     fn test_get_components() {
         let rsa_ciphertext = RsaCiphertext::new(vec![1, 2, 3, 4]);
         let aes_ciphertext = AesCiphertext::new(
+            false,
             vec![5, 6, 7, 8],
             Iv::new().unwrap(),
             vec![9, 10, 11, 12],
@@ -61,6 +63,7 @@ mod tests {
     fn test_ciphertext_data_serialization() {
         let rsa_ciphertext = RsaCiphertext::new(vec![1, 2, 3, 4]);
         let aes_ciphertext = AesCiphertext::new(
+            false,
             vec![5, 6, 7, 8],
             Iv::new().unwrap(),
             vec![9, 10, 11, 12],

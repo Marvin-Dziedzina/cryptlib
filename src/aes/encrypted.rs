@@ -5,14 +5,16 @@ use super::Iv;
 /// Stores `AES` ciphertext
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct AesCiphertext {
+    pub is_stream: bool,
     pub ciphertext: Vec<u8>,
     pub iv: Iv,
     pub aad: Vec<u8>,
     pub tag: [u8; 16],
 }
 impl AesCiphertext {
-    pub fn new(ciphertext: Vec<u8>, iv: Iv, aad: Vec<u8>, tag: [u8; 16]) -> Self {
+    pub fn new(is_stream: bool, ciphertext: Vec<u8>, iv: Iv, aad: Vec<u8>, tag: [u8; 16]) -> Self {
         Self {
+            is_stream,
             ciphertext,
             iv,
             aad,
@@ -21,8 +23,14 @@ impl AesCiphertext {
     }
 
     /// Get components (ciphertext, iv, aad, tag)
-    pub fn get_components(self) -> (Vec<u8>, [u8; 16], Vec<u8>, [u8; 16]) {
-        (self.ciphertext, *self.iv.get_bytes(), self.aad, self.tag)
+    pub fn get_components(self) -> (bool, Vec<u8>, [u8; 16], Vec<u8>, [u8; 16]) {
+        (
+            self.is_stream,
+            self.ciphertext,
+            *self.iv.get_bytes(),
+            self.aad,
+            self.tag,
+        )
     }
 }
 #[cfg(test)]
@@ -36,7 +44,8 @@ mod tests {
         let aad = vec![5, 6, 7, 8];
         let tag = [1; 16];
 
-        let aes_ciphertext = AesCiphertext::new(ciphertext.clone(), iv.clone(), aad.clone(), tag);
+        let aes_ciphertext =
+            AesCiphertext::new(false, ciphertext.clone(), iv.clone(), aad.clone(), tag);
 
         assert_eq!(aes_ciphertext.ciphertext, ciphertext);
         assert_eq!(aes_ciphertext.iv, iv);
@@ -51,9 +60,11 @@ mod tests {
         let aad = vec![5, 6, 7, 8];
         let tag = [1; 16];
 
-        let aes_ciphertext = AesCiphertext::new(ciphertext.clone(), iv.clone(), aad.clone(), tag);
-        let (c, i, a, t) = aes_ciphertext.get_components();
+        let aes_ciphertext =
+            AesCiphertext::new(false, ciphertext.clone(), iv.clone(), aad.clone(), tag);
+        let (s, c, i, a, t) = aes_ciphertext.get_components();
 
+        assert_eq!(s, false);
         assert_eq!(c, ciphertext);
         assert_eq!(i, *iv.get_bytes());
         assert_eq!(a, aad);
@@ -67,7 +78,8 @@ mod tests {
         let aad = vec![5, 6, 7, 8];
         let tag = [1; 16];
 
-        let aes_ciphertext = AesCiphertext::new(ciphertext.clone(), iv.clone(), aad.clone(), tag);
+        let aes_ciphertext =
+            AesCiphertext::new(false, ciphertext.clone(), iv.clone(), aad.clone(), tag);
         let serialized = serde_json::to_string(&aes_ciphertext).unwrap();
         let deserialized: AesCiphertext = serde_json::from_str(&serialized).unwrap();
 

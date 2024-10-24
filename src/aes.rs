@@ -70,7 +70,7 @@ impl AES {
     /// Encrypt data with the internal AES key.
     /// `aad` is additional data that is not encrypted but is protected against tampering.
     /// `aad` has no size limit.
-    pub fn encrypt(&self, data: &[u8], aad: Vec<u8>) -> Result<AesCiphertext, CryptError> {
+    pub fn encrypt(&self, data: &[u8], aad: &[u8]) -> Result<AesCiphertext, CryptError> {
         self.encrypt_with_key(data, aad, &self.get_key())
     }
 
@@ -80,7 +80,7 @@ impl AES {
     pub fn encrypt_with_key(
         &self,
         data: &[u8],
-        aad: Vec<u8>,
+        aad: &[u8],
         key: &AesKey,
     ) -> Result<AesCiphertext, CryptError> {
         let iv = Iv::new()?;
@@ -97,7 +97,7 @@ impl AES {
         )
         .map_err(CryptError::AesError)?;
 
-        Ok(AesCiphertext::new(ciphertext, iv, aad, tag))
+        Ok(AesCiphertext::new(false, ciphertext, iv, aad.to_vec(), tag))
     }
 
     /// Encrypt data from a reader and write to a writer.
@@ -174,7 +174,7 @@ impl AES {
 
         Ok((
             bytes_encrypted,
-            AesCiphertext::new(vec![1, 0, 1], iv, aad.to_vec(), tag),
+            AesCiphertext::new(true, Vec::new(), iv, aad.to_vec(), tag),
         ))
     }
 
@@ -189,7 +189,12 @@ impl AES {
         ciphertext: AesCiphertext,
         key: &AesKey,
     ) -> Result<AesDecrypted, CryptError> {
-        let (ciphertext, iv, aad, tag) = ciphertext.get_components();
+        let (is_stream, ciphertext, iv, aad, tag) = ciphertext.get_components();
+        if is_stream {
+            return Err(CryptError::AesCipherError(String::from(
+                "Not a normal ciphertext!",
+            )));
+        };
 
         // Decrypt
         let data = decrypt_aead(
@@ -202,32 +207,32 @@ impl AES {
         )
         .map_err(CryptError::AesError)?;
 
-        Ok(AesDecrypted::new(data, aad))
+        Ok(AesDecrypted::new(false, data, aad))
     }
 
     /// Decrypt data from a reader and write to a writer.
-    /// Returns the number of bytes decrypted.
+    /// Returns the number of bytes decrypted and the aad.
     /// The key used is the internal AES key.
     pub fn decrypt_stream<R: Read, W: Write>(
         &self,
         reader: R,
         writer: W,
         ciphertext: AesCiphertext,
-    ) -> Result<usize, CryptError> {
+    ) -> Result<(usize, AesDecrypted), CryptError> {
         self.decrypt_stream_with_key(reader, writer, &self.get_key(), ciphertext)
     }
 
     /// Decrypt data from a reader and write to a writer.
-    /// Returns the number of bytes decrypted.
+    /// Returns the number of bytes decrypted and the aad.
     pub fn decrypt_stream_with_key<R: Read, W: Write>(
         &self,
         mut reader: R,
         mut writer: W,
         key: &AesKey,
         ciphertext: AesCiphertext,
-    ) -> Result<usize, CryptError> {
-        let (ciphertext, iv, aad, tag) = ciphertext.get_components();
-        if ciphertext.len() != 3 && ciphertext != [1, 0, 1] {
+    ) -> Result<(usize, AesDecrypted), CryptError> {
+        let (is_stream, _, iv, aad, tag) = ciphertext.get_components();
+        if !is_stream {
             return Err(CryptError::AesCipherError(String::from(
                 "Not a stream ciphertext!",
             )));
@@ -274,7 +279,7 @@ impl AES {
 
         bytes_decrypted += count;
 
-        Ok(bytes_decrypted)
+        Ok((bytes_decrypted, AesDecrypted::new(true, Vec::new(), aad)))
     }
 
     /// Return aes_256_gcm cipher.
@@ -370,7 +375,7 @@ mod aes_tests {
         let aes = AES::new().unwrap();
 
         // Encrypt
-        let ciphertext = aes.encrypt(data, aad.to_vec()).unwrap();
+        let ciphertext = aes.encrypt(data, aad).unwrap();
 
         // Decrypt
         let out = aes.decrypt(ciphertext).unwrap();
@@ -383,6 +388,7 @@ mod aes_tests {
     #[test]
     fn aes_stream() {
         let data = b"Test the AES symmetric en- and decryption.";
+        let aad = b"Test AAD for testing stream AES.";
 
         let aes = AES::new().unwrap();
 
@@ -390,13 +396,7 @@ mod aes_tests {
         let mut reader = BufReader::new(&data[..]);
         let mut writer = BufWriter::new(&mut encrypted);
 
-        let (count, ciphertext) = aes
-            .encrypt_stream(
-                &mut reader,
-                &mut writer,
-                b"Test AAD for testing stream AES.",
-            )
-            .unwrap();
+        let (count, ciphertext) = aes.encrypt_stream(&mut reader, &mut writer, aad).unwrap();
 
         drop(writer);
 
@@ -404,13 +404,14 @@ mod aes_tests {
         let mut reader = BufReader::new(&encrypted[..count]);
         let mut writer = BufWriter::new(&mut decrypted);
 
-        let count = aes
+        let (count, aes_decrypted) = aes
             .decrypt_stream(&mut reader, &mut writer, ciphertext)
             .unwrap();
 
         drop(writer);
 
         assert_eq!(data.to_vec(), decrypted[..count]);
+        assert_eq!(aes_decrypted.aad, aad);
     }
 
     #[test]
