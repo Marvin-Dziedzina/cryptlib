@@ -28,6 +28,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Install OpenSSL
+      run: winget install --id ShiningLight.OpenSSL && setx PATH "%PATH%;C:\Program Files\OpenSSL-Win64\bin" /M
     - name: Build
       run: cargo build -r --verbose
     - name: Run tests
