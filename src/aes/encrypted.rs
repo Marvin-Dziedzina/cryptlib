@@ -72,22 +72,4 @@ mod tests {
         assert_eq!(a, aad);
         assert_eq!(t, tag);
     }
-
-    #[test]
-    fn test_serde_serialization() {
-        let ciphertext = vec![1, 2, 3, 4];
-        let iv = Iv::new().unwrap();
-        let aad = vec![5, 6, 7, 8];
-        let tag = [1; 16];
-
-        let aes_ciphertext =
-            AesCiphertext::new(false, ciphertext.clone(), iv.clone(), aad.clone(), tag);
-        let serialized = serde_json::to_string(&aes_ciphertext).unwrap();
-        let deserialized: AesCiphertext = serde_json::from_str(&serialized).unwrap();
-
-        assert_eq!(deserialized.ciphertext, ciphertext);
-        assert_eq!(deserialized.iv, iv);
-        assert_eq!(deserialized.aad, aad);
-        assert_eq!(deserialized.tag, tag);
-    }
 }

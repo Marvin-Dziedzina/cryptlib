@@ -4,6 +4,7 @@ use crate::CryptError;
 
 /// Represents all the possible SHA hashers
 /// The higher the number, the more secure the hash is but the slower the processing.
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum HashType {
     /// **Should not be used for security critical tasks!** Attacks against the compression function have been known since 1996. In 2004 full collisions were found. Can be used for non critical tasks.
     Md5,
@@ -41,6 +42,7 @@ impl HashType {
 }
 
 /// Represents all the possible SHA hashes.
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Hash {
     Md5([u8; 16]),
     Sha224([u8; 28]),
