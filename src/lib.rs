@@ -15,13 +15,11 @@ pub use responses::CiphertextData;
 use aes::{AesDecrypted, AesKey, AES};
 use rsa::{PublicKey, Signature, RSA};
 use serde::{Deserialize, Serialize};
-use sha::Sha;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CryptLib {
     pub rsa: RSA,
     pub aes: AES,
-    pub sha: Sha,
 }
 /// CryptLib is a library that provides cryptographic functionalities including RSA and AES encryption,
 /// digital signatures, and hashing. It supports creating instances with RSA key sizes and AES keys,
@@ -33,7 +31,6 @@ impl CryptLib {
         Ok(Self {
             rsa: RSA::new(bits.to_bits())?,
             aes: AES::new()?,
-            sha: Sha::new(),
         })
     }
 
@@ -42,7 +39,6 @@ impl CryptLib {
         Ok(Self {
             rsa: RSA::new(bits)?,
             aes: AES::from_key(aes_key),
-            sha: Sha::new(),
         })
     }
 
