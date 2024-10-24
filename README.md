@@ -4,7 +4,10 @@ CryptLib is a small and simple to use cryptography crate for Rust that uses Open
 ## Capabilities
 - RSA encryption
 - AES encryption
-- SHA 256, 384, 512
+- AES encryption for streams
+- SHA 1, 224, 256, 384, 512
+- SHA 1, 224, 256, 384, 512 for streams
+- Composite encryption that uses AES for data and RSA for the AES key
 
 ### Getting Started
 Include this section into your Cargo.toml.
@@ -16,6 +19,7 @@ git = "https://github.com/Marvin-Dziedzina/cryptlib"
 ### Road Map
 - RSA ✅
 - AES ✅
-- SHA 256, 384, 512 ✅
 - AES Stream ✅
+- SHA 1, 224, 256, 384, 512 ✅
+- SHA 1, 224, 256, 384, 512 for streams ✅
 - Argon2 ❌
