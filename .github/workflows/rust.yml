@@ -22,3 +22,17 @@ jobs:
       run: cargo test -r --verbose
     - name: Clippy
       run: cargo clippy
+
+
+  test-windows:
+
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    - run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append
+    - run: vcpkg install openssl:x64-windows-static-md
+    - name: Build
+      run: cargo build -r --verbose
+    - name: Test
+      run: cargo test -r --verbose
