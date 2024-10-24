@@ -1,42 +1,5 @@
 /// CryptLib is a library that provides RSA and AES encryption and decryption functions, as well as SHA hash functions.
-///
-/// # Modules
-/// - `aes`: Contains AES encryption and decryption functionalities.
-/// - `rsa`: Contains RSA encryption, decryption, and signing functionalities.
-/// - `bits`: Utility module for handling bit operations.
-/// - `error`: Defines custom error types for the library.
-/// - `responses`: Defines structures for handling encrypted data.
-///
-/// # Structs
-/// - `CryptLib`: Main structure that holds instances of RSA and AES encryption objects.
-///
-/// # Type Definitions
-/// - `Sha256Hash`: Type alias for a 32-byte array representing a SHA256 hash.
-/// - `Sha384Hash`: Type alias for a 48-byte array representing a SHA384 hash.
-/// - `Sha512Hash`: Type alias for a 64-byte array representing a SHA512 hash.
-///
-/// # Methods
-/// - `new(bits: Bits) -> Result<Self, CryptError>`: Creates a new instance of `CryptLib` with the specified RSA key size.
-/// - `from_aes_key(bits: u32, aes_key: AesKey) -> Result<Self, CryptError>`: Creates a new instance of `CryptLib` from an existing AES key.
-/// - `get_public_keys(&self) -> Result<PublicKey, CryptError>`: Retrieves the public keys for RSA encryption.
-/// - `encrypt_composit(&self, receiver_public_key: &PublicKey, data: &[u8], aad: Vec<u8>) -> Result<CiphertextData, CryptError>`: Encrypts data using AES and encrypts the AES key using RSA.
-/// - `decrypt_composit(&self, ciphertext: CiphertextData) -> Result<AesDecrypted, CryptError>`: Decrypts data that was encrypted using the `encrypt_composit` method.
-/// - `sign(&self, data: &[u8]) -> Result<Signature, CryptError>`: Signs data using RSA.
-/// - `verify(&self, public_key: &PublicKey, data: &[u8], signature: Signature) -> Result<bool, CryptError>`: Verifies the RSA signature of the data.
-/// - `sha256(buf: &[u8]) -> Sha256Hash`: Creates a SHA256 hash from the input buffer.
-/// - `sha384(buf: &[u8]) -> Sha384Hash`: Creates a SHA384 hash from the input buffer.
-/// - `sha512(buf: &[u8]) -> Sha512Hash`: Creates a SHA512 hash from the input buffer.
-///
-/// # Tests
-/// - `crypt_lib_encryption`: Tests the encryption and decryption functionality.
-/// - `crypt_lib_signing`: Tests the signing and verification functionality.
-/// - `crypt_lib_serde`: Tests serialization and deserialization of `CryptLib`.
-/// - `sha256_test`: Tests the SHA256 hash function.
-/// - `sha384_test`: Tests the SHA384 hash function.
-/// - `sha512_test`: Tests the SHA512 hash function.
-/// - `crypt_lib_encryption_different_key_sizes`: Tests encryption and decryption with different RSA key sizes.
-/// - `crypt_lib_decryption_failure`: Tests decryption failure with tampered ciphertext.
-/// - `crypt_lib_signing_verification_failure`: Tests verification failure with incorrect data.
+/// It supports creating instances with RSA key sizes and AES keys, encrypting and decrypting data using a composite method (AES for data and RSA for AES key), signing and verifying data, and generating SHA hashes.
 pub mod aes;
 pub mod rsa;
 pub mod sha;
@@ -88,8 +51,8 @@ impl CryptLib {
     }
 
     /// Encrypt `data`. `aad` are additional bytes that are **NOT** encrypted but cant be altered.
-    /// Composit meaning that the actual data is encrypted with AES and the AES key is encrypted with RSA.
-    pub fn encrypt_composit(
+    /// Composite meaning that the actual data is encrypted with AES and the AES key is encrypted with RSA.
+    pub fn encrypt_composite(
         &self,
         receiver_public_key: &PublicKey,
         data: &[u8],
@@ -103,9 +66,12 @@ impl CryptLib {
         Ok(CiphertextData::new(aes_key, aes_ciphertext))
     }
 
-    /// Decrypt `CiphertextData` composit.
-    /// Composit meaning that the actual data is encrypted with AES and the AES key is encrypted with RSA.
-    pub fn decrypt_composit(&self, ciphertext: CiphertextData) -> Result<AesDecrypted, CryptError> {
+    /// Decrypt `CiphertextData` composite.
+    /// Composite meaning that the actual data is encrypted with AES and the AES key is encrypted with RSA.
+    pub fn decrypt_composite(
+        &self,
+        ciphertext: CiphertextData,
+    ) -> Result<AesDecrypted, CryptError> {
         let (rsa_ciphertext, aes_ciphertext) = ciphertext.get_components();
 
         let aes_key = AesKey::from_vec(&self.rsa.decrypt(rsa_ciphertext)?)?;
