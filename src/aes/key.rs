@@ -22,7 +22,7 @@ impl AesKey {
     }
 
     /// Create `AesKey` instance from a key vec.
-    pub fn from_vec(vec: &Vec<u8>) -> Result<Self, CryptError> {
+    pub fn from_vec(vec: &[u8]) -> Result<Self, CryptError> {
         if vec.len() != 32 {
             return Err(CryptError::AesKeyError(String::from(
                 "Key lenght is not 32 bits!",

@@ -64,7 +64,7 @@ impl CryptLib {
 
         let aes_key = AesKey::from_vec(&self.rsa.decrypt(rsa_ciphertext)?)?;
 
-        self.aes.decrypt_from_key(aes_ciphertext, &aes_key)
+        self.aes.decrypt_with_key(aes_ciphertext, &aes_key)
     }
 
     /// Sign data
@@ -224,7 +224,11 @@ mod crypt_lib_tests {
         let aad = "AAD data".as_bytes().to_vec();
 
         let ciphertext_2048 = crypt_lib_2048
-            .encrypt(&crypt_lib_2048.get_public_keys().unwrap(), data, aad.clone())
+            .encrypt(
+                &crypt_lib_2048.get_public_keys().unwrap(),
+                data,
+                aad.clone(),
+            )
             .unwrap();
         let decrypted_2048 = crypt_lib_2048.decrypt(ciphertext_2048).unwrap();
         let (data_dec_2048, aad_dec_2048) = decrypted_2048.get_components();
@@ -232,7 +236,11 @@ mod crypt_lib_tests {
         assert_eq!(aad, aad_dec_2048);
 
         let ciphertext_4096 = crypt_lib_4096
-            .encrypt(&crypt_lib_4096.get_public_keys().unwrap(), data, aad.clone())
+            .encrypt(
+                &crypt_lib_4096.get_public_keys().unwrap(),
+                data,
+                aad.clone(),
+            )
             .unwrap();
         let decrypted_4096 = crypt_lib_4096.decrypt(ciphertext_4096).unwrap();
         let (data_dec_4096, aad_dec_4096) = decrypted_4096.get_components();
@@ -256,8 +264,8 @@ mod crypt_lib_tests {
         let (rsa_cyphertext, aes_cypertext) = tampered_ciphertext.get_components();
         let mut rsa_cypherthext_bytes = rsa_cyphertext.get_component();
         rsa_cypherthext_bytes.push(5);
-        tampered_ciphertext = CiphertextData::new(RsaCiphertext::new(rsa_cypherthext_bytes), aes_cypertext);
-
+        tampered_ciphertext =
+            CiphertextData::new(RsaCiphertext::new(rsa_cypherthext_bytes), aes_cypertext);
 
         let result = crypt_lib.decrypt(tampered_ciphertext);
         assert!(result.is_err());

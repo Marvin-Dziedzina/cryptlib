@@ -17,5 +17,5 @@ git = "https://github.com/Marvin-Dziedzina/cryptlib"
 - RSA ✅
 - AES ✅
 - SHA 256, 384, 512 ✅
-- AES Stream ❌
+- AES Stream ✅
 - Argon2 ❌
