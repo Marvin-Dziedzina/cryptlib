@@ -67,8 +67,8 @@
 //! The library includes comprehensive tests to ensure the correctness of encryption, decryption, signing, and verification functionalities. The tests cover different RSA key sizes, serialization and deserialization, and error handling for tampered data and incorrect signatures.
 
 pub mod aes;
-pub mod rsa;
 pub mod hash;
+pub mod rsa;
 
 mod error;
 mod responses;
