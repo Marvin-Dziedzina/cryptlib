@@ -39,6 +39,7 @@
 /// - `crypt_lib_signing_verification_failure`: Tests verification failure with incorrect data.
 pub mod aes;
 pub mod rsa;
+pub mod sha;
 
 mod bits;
 mod error;
@@ -49,29 +50,27 @@ pub use error::CryptError;
 pub use responses::CiphertextData;
 
 use aes::{AesDecrypted, AesKey, AES};
-use openssl::sha::{Sha256, Sha384, Sha512};
 use rsa::{PublicKey, Signature, RSA};
 use serde::{Deserialize, Serialize};
-
-pub type Sha256Hash = [u8; 32];
-pub type Sha384Hash = [u8; 48];
-pub type Sha512Hash = [u8; 64];
+use sha::Sha;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CryptLib {
     pub rsa: RSA,
     pub aes: AES,
+    pub sha: Sha,
 }
 /// CryptLib is a library that provides cryptographic functionalities including RSA and AES encryption,
 /// digital signatures, and hashing. It supports creating instances with RSA key sizes and AES keys,
 /// encrypting and decrypting data using a composite method (AES for data and RSA for AES key),
-/// signing and verifying data, and generating SHA256, SHA384, and SHA512 hashes.
+/// signing and verifying data, and generating SHA hashes.
 
 impl CryptLib {
     pub fn new(bits: Bits) -> Result<Self, CryptError> {
         Ok(Self {
             rsa: RSA::new(bits.to_bits())?,
             aes: AES::new()?,
+            sha: Sha::new(),
         })
     }
 
@@ -80,6 +79,7 @@ impl CryptLib {
         Ok(Self {
             rsa: RSA::new(bits)?,
             aes: AES::from_key(aes_key),
+            sha: Sha::new(),
         })
     }
 
@@ -126,33 +126,6 @@ impl CryptLib {
         signature: Signature,
     ) -> Result<bool, CryptError> {
         self.rsa.verify(public_key, data, signature)
-    }
-
-    /// Create a SHA256 hash from buf.
-    pub fn sha256(buf: &[u8]) -> Sha256Hash {
-        let mut hasher = Sha256::new();
-
-        hasher.update(buf);
-
-        hasher.finish()
-    }
-
-    /// Create a SHA384 hash from buf.
-    pub fn sha384(buf: &[u8]) -> Sha384Hash {
-        let mut hasher = Sha384::new();
-
-        hasher.update(buf);
-
-        hasher.finish()
-    }
-
-    /// Create a SHA512 hash from buf.
-    pub fn sha512(buf: &[u8]) -> Sha512Hash {
-        let mut hasher = Sha512::new();
-
-        hasher.update(buf);
-
-        hasher.finish()
     }
 }
 
@@ -203,62 +176,6 @@ mod crypt_lib_tests {
         let json = serde_json::to_string(&crypt_lib).unwrap();
 
         let _: CryptLib = serde_json::from_str(&json).unwrap();
-    }
-
-    #[test]
-    fn sha256_test() {
-        let buf = b"Sha256 Test";
-
-        let hash = CryptLib::sha256(buf);
-
-        assert_eq!(
-            hash,
-            [
-                // This array represents the sha256 hash of "Sha256 Test"
-                166, 60, 82, 147, 46, 231, 78, 240, 20, 236, 61, 240, 28, 106, 175, 103, 46, 102,
-                174, 38, 19, 220, 90, 2, 210, 253, 126, 140, 69, 27, 30, 112
-            ]
-        );
-    }
-
-    #[test]
-    fn sha384_test() {
-        let buf = b"Sha384 Test";
-
-        let hash = CryptLib::sha384(buf);
-
-        for x in &hash {
-            print!("{}, ", x)
-        }
-        println!();
-
-        assert_eq!(
-            hash,
-            [
-                // This array represents the sha384 hash of "Sha384 Test"
-                47, 241, 54, 247, 112, 182, 93, 137, 55, 154, 105, 32, 124, 5, 188, 118, 209, 252,
-                88, 182, 216, 215, 95, 108, 209, 71, 56, 103, 18, 35, 78, 124, 245, 167, 59, 124,
-                172, 86, 207, 226, 195, 193, 150, 247, 213, 26, 143, 201
-            ]
-        );
-    }
-
-    #[test]
-    fn sha512_test() {
-        let buf = b"Sha512 Test";
-
-        let hash = CryptLib::sha512(buf);
-
-        assert_eq!(
-            hash,
-            [
-                // This array represents the sha512 hash of "Sha512 Test"
-                111, 166, 149, 142, 226, 122, 152, 89, 111, 143, 201, 158, 153, 177, 26, 248, 116,
-                141, 208, 158, 128, 166, 150, 92, 143, 139, 250, 45, 189, 105, 60, 249, 68, 83, 92,
-                15, 186, 27, 119, 102, 170, 114, 209, 114, 171, 18, 58, 227, 218, 232, 114, 101,
-                17, 120, 240, 45, 253, 244, 44, 41, 176, 119, 162, 220
-            ]
-        );
     }
 
     #[test]
