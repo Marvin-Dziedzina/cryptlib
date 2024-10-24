@@ -130,7 +130,7 @@ impl AES {
     ///
     /// Returns a `CryptError` if the encryption fails or if the `IV` could not be generated.
     pub fn encrypt(&self, data: &[u8], aad: &[u8]) -> Result<AesCiphertext, CryptError> {
-        self.encrypt_with_key(data, aad, &self.get_key())
+        self.encrypt_with_key(data, aad, self.get_key())
     }
 
     /// Encrypt data with a given key.
@@ -154,7 +154,7 @@ impl AES {
             self.cipher,
             &key.get_bytes(),
             Some(iv.get_bytes()),
-            &aad,
+            aad,
             data,
             &mut tag,
         )
@@ -176,7 +176,7 @@ impl AES {
         writer: W,
         aad: &[u8],
     ) -> Result<(usize, AesCiphertext), CryptError> {
-        self.encrypt_stream_with_key(reader, writer, &self.get_key(), aad)
+        self.encrypt_stream_with_key(reader, writer, self.get_key(), aad)
     }
 
     /// Encrypt data from a reader and write to a writer.
@@ -255,7 +255,7 @@ impl AES {
     ///
     /// Returns a `CryptError` if the decryption fails or if the `ciphertext` is not a stream.
     pub fn decrypt(&self, ciphertext: AesCiphertext) -> Result<AesDecrypted, CryptError> {
-        self.decrypt_with_key(ciphertext, &self.get_key())
+        self.decrypt_with_key(ciphertext, self.get_key())
     }
 
     /// Decrypt data with a given key.
@@ -302,7 +302,7 @@ impl AES {
         writer: W,
         ciphertext: AesCiphertext,
     ) -> Result<(usize, AesDecrypted), CryptError> {
-        self.decrypt_stream_with_key(reader, writer, &self.get_key(), ciphertext)
+        self.decrypt_stream_with_key(reader, writer, self.get_key(), ciphertext)
     }
 
     /// Decrypt data from a reader and write to a writer.

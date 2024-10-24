@@ -128,7 +128,7 @@ impl CryptLib {
         data: &[u8],
         aad: &[u8],
     ) -> Result<CiphertextData, CryptError> {
-        self.encrypt_composite_with_aes_key(receiver_public_key, &self.aes.get_key(), data, aad)
+        self.encrypt_composite_with_aes_key(receiver_public_key, self.aes.get_key(), data, aad)
     }
 
     /// Encrypt `data` with AES key. `aad` are additional bytes that are **NOT** encrypted but cant be altered.
@@ -167,7 +167,7 @@ impl CryptLib {
     ) -> Result<CiphertextData, CryptError> {
         self.encrypt_composite_stream_with_aes_key(
             receiver_public_key,
-            &self.aes.get_key(),
+            self.aes.get_key(),
             reader,
             writer,
             aad,

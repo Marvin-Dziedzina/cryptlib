@@ -66,7 +66,7 @@ mod tests {
             AesCiphertext::new(false, ciphertext.clone(), iv.clone(), aad.clone(), tag);
         let (s, c, i, a, t) = aes_ciphertext.get_components();
 
-        assert_eq!(s, false);
+        assert!(!s);
         assert_eq!(c, ciphertext);
         assert_eq!(i, *iv.get_bytes());
         assert_eq!(a, aad);

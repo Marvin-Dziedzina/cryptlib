@@ -49,7 +49,7 @@ mod tests {
         let data = vec![1, 2, 3, 4, 5];
         let ciphertext = RsaCiphertext::new(data.clone());
         let serialized = serde_json::to_string(&ciphertext).unwrap();
-        let expected = format!(r#"{{"ciphertext":[1,2,3,4,5]}}"#);
+        let expected = r#"{"ciphertext":[1,2,3,4,5]}"#.to_string();
         assert_eq!(serialized, expected);
     }
 
