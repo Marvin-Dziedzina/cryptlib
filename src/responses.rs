@@ -2,13 +2,15 @@ use serde::{Deserialize, Serialize};
 
 use crate::{aes::AesCiphertext, rsa::RsaCiphertext};
 
-/// `rsa_ciphertext` holds the encrypted aes key. `aes_ciphertext` holds the aes encrypted data.
+/// `CiphertextData` is a struct that holds the encrypted aes key and the aes encrypted data.
+/// It is used to decrypt the data.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CiphertextData {
     rsa_ciphertext: RsaCiphertext,
     aes_ciphertext: AesCiphertext,
 }
 impl CiphertextData {
+    /// Create a new `CiphertextData` struct.
     pub fn new(rsa_ciphertext: RsaCiphertext, aes_ciphertext: AesCiphertext) -> Self {
         Self {
             rsa_ciphertext,
@@ -16,6 +18,7 @@ impl CiphertextData {
         }
     }
 
+    /// Get the components of the `CiphertextData` struct.
     pub fn get_components(self) -> (RsaCiphertext, AesCiphertext) {
         (self.rsa_ciphertext, self.aes_ciphertext)
     }

@@ -1,9 +1,15 @@
 /// Represents all the possible SHA hashers
+/// The higher the number, the more secure the hash is but the slower the processing.
 pub enum Hasher {
+    /// **Should not be used for security critical tasks!** Theoretical attacks have been known since 2005. In 2011 NIST deprecated the use of SHA1.
     Sha1,
+    /// This hasher is rarely used. But is still considered secure.
     Sha224,
+    /// This hasher is the most common one. It is considered secure.
     Sha256,
+    /// This hasher is considered secure.
     Sha384,
+    /// This hasher is considered secure.
     Sha512,
 }
 

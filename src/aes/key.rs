@@ -1,15 +1,22 @@
+//! AES key.
+
 use openssl::rand::rand_bytes;
 use serde::{Deserialize, Serialize};
 
 use crate::CryptError;
 
 /// Stores the AES key
+/// The key is 32 bytes long.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AesKey {
     key: [u8; 32],
 }
 impl AesKey {
-    /// Create new instance of AesKey. This generates a new key.
+    /// Create new instance of AesKey. This generates a new 32 byte key.
+    ///
+    /// # Errors
+    ///
+    /// Returns a CryptError if the key generation fails.
     pub fn new() -> Result<Self, CryptError> {
         Ok(Self {
             key: Self::generate_key_32bytes()?,
@@ -21,7 +28,11 @@ impl AesKey {
         Self { key: bytes }
     }
 
-    /// Create `AesKey` instance from a key vec.
+    /// Create `AesKey` instance from a key vec that needs to be 32 bytes long.
+    ///
+    /// # Errors
+    ///
+    /// Returns a CryptError if the key length is not 32 bytes.
     pub fn from_vec(vec: &[u8]) -> Result<Self, CryptError> {
         if vec.len() != 32 {
             return Err(CryptError::AesKeyError(String::from(
@@ -40,7 +51,11 @@ impl AesKey {
         self.key
     }
 
-    /// Generate a 32 byte random key.
+    /// Generate a 32 byte random key with cryptographically strong pseudo-random bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns a CryptError if `rand_bytes()` fails.
     fn generate_key_32bytes() -> Result<[u8; 32], CryptError> {
         let mut key = [0; 32];
         rand_bytes(&mut key).map_err(CryptError::RandError)?;
@@ -57,18 +72,6 @@ impl Clone for AesKey {
     }
 }
 
-pub struct EncryptedAesKey {
-    encrypted_key: String,
-}
-impl EncryptedAesKey {
-    pub fn new(encrypted_key: String) -> Self {
-        Self { encrypted_key }
-    }
-
-    pub fn get_component(self) -> String {
-        self.encrypted_key
-    }
-}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -108,12 +111,5 @@ mod tests {
         let aes_key = AesKey::new().unwrap();
         let cloned_key = aes_key.clone();
         assert_eq!(aes_key.get_bytes(), cloned_key.get_bytes());
-    }
-
-    #[test]
-    fn test_encrypted_aes_key_new() {
-        let encrypted_key = String::from("encrypted_key");
-        let encrypted_aes_key = EncryptedAesKey::new(encrypted_key.clone());
-        assert_eq!(encrypted_aes_key.get_component(), encrypted_key);
     }
 }

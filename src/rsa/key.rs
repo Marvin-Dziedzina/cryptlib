@@ -1,3 +1,7 @@
+//! # RSA Key
+//!
+//! The `rsa` module provides the `PublicKey` struct to store the rsa public key and the sign public key.
+
 use std::fmt::Display;
 
 use openssl::{
@@ -13,6 +17,8 @@ use serde::{
 use crate::CryptError;
 
 /// Stores the rsa public key and the sign public key.
+/// The rsa key is used for encryption and decryption.
+/// The sign key is used for signing and verifying.
 #[derive(Debug, Clone)]
 pub struct PublicKey {
     rsa_key: Rsa<Public>,
@@ -20,6 +26,10 @@ pub struct PublicKey {
 }
 impl PublicKey {
     /// Create new instance of `PublicKey` from public keys.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `CryptError` if the public keys can not be decoded.
     pub fn new(
         rsa_public_key: &[u8],
         rsa_public_key_format: KeyFormat,
@@ -41,32 +51,38 @@ impl PublicKey {
         Ok(Self { rsa_key, sign_key })
     }
 
+    /// Get the raw rsa key.
     pub fn get_rsa_key(&self) -> &Rsa<Public> {
         &self.rsa_key
     }
 
+    /// Get the rsa key in DER format.
     pub fn get_rsa_key_der(&self) -> Result<Vec<u8>, CryptError> {
         self.rsa_key
             .public_key_to_der()
             .map_err(CryptError::PublicKey)
     }
 
+    /// Get the rsa key in PEM format.
     pub fn get_rsa_key_pem(&self) -> Result<Vec<u8>, CryptError> {
         self.rsa_key
             .public_key_to_pem()
             .map_err(CryptError::PublicKey)
     }
 
+    /// Get the raw sign key.
     pub fn get_sign_key(&self) -> &PKey<Public> {
         &self.sign_key
     }
 
+    /// Get the sign key in DER format.
     pub fn get_sign_key_der(&self) -> Result<Vec<u8>, CryptError> {
         self.sign_key
             .public_key_to_der()
             .map_err(CryptError::PublicKey)
     }
 
+    /// Get the sign key in PEM format.
     pub fn get_sign_key_pem(&self) -> Result<Vec<u8>, CryptError> {
         self.sign_key
             .public_key_to_pem()
@@ -200,7 +216,7 @@ mod public_key_tests {
 
     #[test]
     fn public_key_serde() {
-        let public_key = RSA::new(2048).unwrap().get_public_keys().unwrap();
+        let public_key = RSA::new(Bits::Bits2048).unwrap().get_public_keys().unwrap();
 
         let json = serde_json::to_string(&public_key).unwrap();
 
@@ -237,7 +253,7 @@ mod public_key_tests {
     }
 
     fn get_pub_key() -> Result<PublicKey, CryptError> {
-        let rsa = RSA::new(2048)?;
+        let rsa = RSA::new(Bits::Bits2048)?;
         rsa.get_public_keys()
     }
 

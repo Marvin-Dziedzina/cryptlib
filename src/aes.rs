@@ -1,3 +1,60 @@
+//! The `AES` struct provides methods for AES encryption and decryption using the AES-256-GCM cipher.
+//! It supports both in-memory data encryption/decryption and stream-based encryption/decryption.
+//! The AES-256-GCM cipher is used because it is one of the most secure and widely used symmetric encryption algorithms.
+//!
+//! # Examples
+//!
+//! Basic usage:
+//!
+//! ``` rust
+//! use cryptlib::aes::AES;
+//!
+//! let data = b"Sensitive data";
+//! let aad = b"Additional authenticated data";
+//!
+//! let aes = AES::new().unwrap();
+//!
+//! // Encrypt
+//! let ciphertext = aes.encrypt(data, aad).unwrap();
+//!
+//! // Decrypt
+//! let decrypted = aes.decrypt(ciphertext).unwrap();
+//!
+//! assert_eq!(data.to_vec(), decrypted.data);
+//! assert_eq!(aad.to_vec(), decrypted.aad);
+//! ```
+//!
+//! Stream-based encryption/decryption:
+//!
+//! ```
+//! use cryptlib::aes::AES;
+//! use std::io::{BufReader, BufWriter};
+//!
+//! let data = b"Stream data";
+//! let aad = b"Stream AAD";
+//!
+//! let aes = AES::new().unwrap();
+//!
+//! let mut encrypted = Vec::new();
+//! let mut reader = BufReader::new(&data[..]);
+//! let mut writer = BufWriter::new(&mut encrypted);
+//!
+//! let (count, ciphertext) = aes.encrypt_stream(&mut reader, &mut writer, aad).unwrap();
+//!
+//! drop(writer); // Only needed to please th borrowchecker in this example.
+//!
+//! let mut decrypted = Vec::new();
+//! let mut reader = BufReader::new(&encrypted[..count]);
+//! let mut writer = BufWriter::new(&mut decrypted);
+//!
+//! let (count, aes_decrypted) = aes.decrypt_stream(&mut reader, &mut writer, ciphertext).unwrap();
+//!
+//! drop(writer); // Only needed to please th borrowchecker in this example.
+//!
+//! assert_eq!(data.to_vec(), decrypted[..count]);
+//! assert_eq!(aes_decrypted.aad, aad);
+//! ```
+
 use std::{
     fmt::Debug,
     io::{Read, Write},
@@ -23,14 +80,20 @@ mod key;
 pub use aes_decrypt::AesDecrypted;
 pub use encrypted::AesCiphertext;
 pub use iv::Iv;
-pub use key::{AesKey, EncryptedAesKey};
+pub use key::AesKey;
 
+/// AES struct provides methods for AES encryption and decryption using the AES-256-GCM cipher.
+/// It supports both in-memory data encryption/decryption and stream-based encryption/decryption.
 pub struct AES {
     key: AesKey,
     cipher: Cipher,
 }
 impl AES {
     /// Create new `AES` instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `CryptError` if the AES key could not be generated.
     pub fn new() -> Result<Self, CryptError> {
         // Generate `AES` key
         let key = AesKey::new()?;
@@ -49,20 +112,12 @@ impl AES {
         }
     }
 
-    /// Create instance of `AES` from aes key bytes.
-    pub fn from_key_bytes(bytes: [u8; 32]) -> Self {
-        Self {
-            key: AesKey::from_bytes(bytes),
-            cipher: Self::get_cipher(),
-        }
+    /// Get AES key.
+    pub fn get_key(&self) -> &AesKey {
+        &self.key
     }
 
-    /// Get AES key
-    pub fn get_key(&self) -> AesKey {
-        self.key.clone()
-    }
-
-    /// Set AES key
+    /// Set AES key.
     pub fn set_key(&mut self, key: AesKey) {
         self.key = key;
     }
@@ -70,6 +125,10 @@ impl AES {
     /// Encrypt data with the internal AES key.
     /// `aad` is additional data that is not encrypted but is protected against tampering.
     /// `aad` has no size limit.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `CryptError` if the encryption fails or if the `IV` could not be generated.
     pub fn encrypt(&self, data: &[u8], aad: &[u8]) -> Result<AesCiphertext, CryptError> {
         self.encrypt_with_key(data, aad, &self.get_key())
     }
@@ -77,6 +136,10 @@ impl AES {
     /// Encrypt data with a given key.
     /// `aad` is additional data that is not encrypted but is protected against tampering.
     /// `aad` has no size limit.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `CryptError` if the encryption fails or if `IV` could not be generated.
     pub fn encrypt_with_key(
         &self,
         data: &[u8],
@@ -103,6 +166,10 @@ impl AES {
     /// Encrypt data from a reader and write to a writer.
     /// Returns the number of bytes encrypted.
     /// The key used is the internal AES key.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `CryptError` if the encryption fails or if the `IV` could not be generated.
     pub fn encrypt_stream<R: Read, W: Write>(
         &self,
         reader: R,
@@ -114,6 +181,10 @@ impl AES {
 
     /// Encrypt data from a reader and write to a writer.
     /// Returns the number of bytes encrypted.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `CryptError` if the encryption fails or if the `IV` could not be generated.
     pub fn encrypt_stream_with_key<R: Read, W: Write>(
         &self,
         mut reader: R,
@@ -179,11 +250,19 @@ impl AES {
     }
 
     /// Decript data with the internal AES key.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `CryptError` if the decryption fails or if the `ciphertext` is not a stream.
     pub fn decrypt(&self, ciphertext: AesCiphertext) -> Result<AesDecrypted, CryptError> {
         self.decrypt_with_key(ciphertext, &self.get_key())
     }
 
     /// Decrypt data with a given key.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `CryptError` if the decryption fails or if the `ciphertext` is not a stream.
     pub fn decrypt_with_key(
         &self,
         ciphertext: AesCiphertext,
@@ -213,6 +292,10 @@ impl AES {
     /// Decrypt data from a reader and write to a writer.
     /// Returns the number of bytes decrypted and the aad.
     /// The key used is the internal AES key.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `CryptError` if the decryption fails or if the `ciphertext` is not a stream. This could mean that the data was tampered with.
     pub fn decrypt_stream<R: Read, W: Write>(
         &self,
         reader: R,
@@ -224,6 +307,10 @@ impl AES {
 
     /// Decrypt data from a reader and write to a writer.
     /// Returns the number of bytes decrypted and the aad.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `CryptError` if the decryption fails or if the `ciphertext` is not a stream. This could mean that the data was tampered with.
     pub fn decrypt_stream_with_key<R: Read, W: Write>(
         &self,
         mut reader: R,
@@ -351,9 +438,12 @@ impl<'de> Deserialize<'de> for AES {
                     )));
                 }
 
-                Ok(AES::from_key_bytes(raw_key.try_into().map_err(|_| {
-                    de::Error::custom("Could not convert bytes to AES key!".to_string())
-                })?))
+                let raw_key_array: [u8; 32] = raw_key.try_into().map_err(|_| {
+                    de::Error::custom(
+                        "Expected key length is 32 bytes, but got a different length!",
+                    )
+                })?;
+                Ok(AES::from_key(AesKey::from_bytes(raw_key_array)))
             }
         }
 

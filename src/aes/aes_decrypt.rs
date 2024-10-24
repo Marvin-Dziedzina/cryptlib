@@ -5,6 +5,7 @@ pub struct AesDecrypted {
     pub aad: Vec<u8>,
 }
 impl AesDecrypted {
+    /// Create a new `AesDecrypted` instance.
     pub fn new(is_stream: bool, data: Vec<u8>, aad: Vec<u8>) -> Self {
         Self {
             is_stream,

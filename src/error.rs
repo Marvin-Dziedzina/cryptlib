@@ -2,6 +2,7 @@ use std::{error::Error, fmt::Display};
 
 use openssl::error::ErrorStack;
 
+/// Error type for the `crypt` module.
 #[derive(Debug)]
 pub enum CryptError {
     RsaError(ErrorStack),
@@ -12,6 +13,7 @@ pub enum CryptError {
     PublicKey(ErrorStack),
     RandError(ErrorStack),
     IoError(std::io::Error),
+    InvalidHashLength,
 }
 
 impl Display for CryptError {
@@ -25,6 +27,7 @@ impl Display for CryptError {
             CryptError::PublicKey(e) => write!(f, "Public Key Error: {}", e),
             CryptError::RandError(e) => write!(f, "Rand Error: {}", e),
             CryptError::IoError(e) => write!(f, "IO Error: {}", e),
+            CryptError::InvalidHashLength => write!(f, "Invalid Hash Length"),
         }
     }
 }

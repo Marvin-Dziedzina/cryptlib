@@ -12,6 +12,10 @@ pub struct Iv {
 }
 impl Iv {
     /// Create a new `Iv` with random bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns a CryptError if the random bytes generation fails.
     pub fn new() -> Result<Self, CryptError> {
         Ok(Self {
             bytes: Self::generate_iv()?,
@@ -23,7 +27,11 @@ impl Iv {
         &self.bytes
     }
 
-    /// Generate a 16 byte random iv.
+    /// Generate a 16 byte random iv with cryptographically strong pseudo-random bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns a CryptError if `rand_bytes()` fails.
     fn generate_iv() -> Result<[u8; 16], CryptError> {
         let mut key: [u8; 16] = [0; 16];
         rand_bytes(&mut key).map_err(CryptError::RandError)?;

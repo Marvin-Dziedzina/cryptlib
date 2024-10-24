@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 
 use super::Iv;
 
-/// Stores `AES` ciphertext
+/// Stores `AES` ciphertext.
+/// `is_stream` is a flag that indicates if the ciphertext is a stream or block cipher.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct AesCiphertext {
     pub is_stream: bool,
@@ -12,6 +13,7 @@ pub struct AesCiphertext {
     pub tag: [u8; 16],
 }
 impl AesCiphertext {
+    /// Create a new `AesCiphertext` instance.
     pub fn new(is_stream: bool, ciphertext: Vec<u8>, iv: Iv, aad: Vec<u8>, tag: [u8; 16]) -> Self {
         Self {
             is_stream,
@@ -22,7 +24,7 @@ impl AesCiphertext {
         }
     }
 
-    /// Get components (ciphertext, iv, aad, tag)
+    /// Get components (is_stream, ciphertext, iv, aad, tag)
     pub fn get_components(self) -> (bool, Vec<u8>, [u8; 16], Vec<u8>, [u8; 16]) {
         (
             self.is_stream,

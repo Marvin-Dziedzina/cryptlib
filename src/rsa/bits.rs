@@ -1,3 +1,5 @@
+/// Enum to represent the bits of the RSA key.
+#[derive(Debug)]
 pub enum Bits {
     Bits1024,
     Bits2048,
@@ -6,6 +8,7 @@ pub enum Bits {
     Custom(u32),
 }
 impl Bits {
+    /// Convert the Bits enum to u32.
     pub fn to_bits(&self) -> u32 {
         match self {
             Bits::Bits1024 => 1024,

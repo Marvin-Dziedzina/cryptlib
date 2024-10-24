@@ -1,7 +1,43 @@
+//! The `sha` module provides SHA hashing functionalities.
+//! It supports creating SHA hashes from buffers and streams.
+//! The module supports SHA1, SHA224, SHA256, SHA384, and SHA512 hashing algorithms.
+//! The module also provides functions to verify the integrity of the data using SHA hashes.
+//! The module uses the `openssl` crate to provide the hashing functionalities.
+//!
+//! # Example
+//!
+//! Create a SHA hash from a buffer:
+//! ```rust
+//! use cryptlib::sha::{self, Hasher};
+//!
+//! let buf = b"Hello, World!";
+//!
+//! let hash = sha::sha(buf, Hasher::Sha256);
+//!
+//! let is_valid = sha::verify_sha(buf, hash);
+//!
+//! assert!(is_valid);
+//! ```
+//!
+//! Create a SHA hash from a stream:
+//! ```rust
+//! use std::io::BufReader;
+//! use cryptlib::sha;
+//!
+//! let buf = b"Hello, World!";
+//! let reader = BufReader::new(&buf[..]);
+//!
+//! let hash = sha::sha256_stream(reader).unwrap();
+//!
+//! let reader = BufReader::new(&buf[..]);
+//! let is_valid = sha::verify_sha_stream(reader, hash).unwrap();
+//!
+//! assert!(is_valid);
+//! ```
+
 use std::io::Read;
 
 use openssl::sha;
-use serde::{Deserialize, Serialize};
 
 mod hashes;
 
@@ -9,185 +45,180 @@ pub use hashes::{Hash, Hasher};
 
 use crate::CryptError;
 
-/// Sha is a struct that provides SHA hashing functionalities.
-/// It supports creating SHA hashes from buffers and streams.
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct Sha {}
-impl Sha {
-    /// Create a SHA hash from buf.
-    pub fn sha(buf: &[u8], hash_type: Hasher) -> Hash {
-        match hash_type {
-            Hasher::Sha1 => Hash::Sha1(sha::sha1(buf)),
-            Hasher::Sha224 => Hash::Sha224(sha::sha224(buf)),
-            Hasher::Sha256 => Hash::Sha256(sha::sha256(buf)),
-            Hasher::Sha384 => Hash::Sha384(sha::sha384(buf)),
-            Hasher::Sha512 => Hash::Sha512(sha::sha512(buf)),
-        }
+/// Create a SHA hash from bytes.
+pub fn sha(buf: &[u8], hash_type: Hasher) -> Hash {
+    match hash_type {
+        Hasher::Sha1 => Hash::Sha1(sha::sha1(buf)),
+        Hasher::Sha224 => Hash::Sha224(sha::sha224(buf)),
+        Hasher::Sha256 => Hash::Sha256(sha::sha256(buf)),
+        Hasher::Sha384 => Hash::Sha384(sha::sha384(buf)),
+        Hasher::Sha512 => Hash::Sha512(sha::sha512(buf)),
     }
+}
 
-    /// Verify a SHA hash.
-    /// This function will return true if the hash is valid, otherwise false.
-    /// This method is useful for verifying the integrity of a file but **is not secure**.
-    pub fn verify_sha(buf: &[u8], hash: Hash) -> bool {
-        match hash {
-            Hash::Sha1(h) => h == sha::sha1(buf),
-            Hash::Sha224(h) => h == sha::sha224(buf),
-            Hash::Sha256(h) => h == sha::sha256(buf),
-            Hash::Sha384(h) => h == sha::sha384(buf),
-            Hash::Sha512(h) => h == sha::sha512(buf),
-        }
+/// Verify a SHA hash.
+/// This function will return true if the hash is valid, otherwise false.
+/// This method is useful for verifying the integrity of data but **is not secure**.
+pub fn verify_sha(buf: &[u8], hash: Hash) -> bool {
+    match hash {
+        Hash::Sha1(h) => h == sha::sha1(buf),
+        Hash::Sha224(h) => h == sha::sha224(buf),
+        Hash::Sha256(h) => h == sha::sha256(buf),
+        Hash::Sha384(h) => h == sha::sha384(buf),
+        Hash::Sha512(h) => h == sha::sha512(buf),
     }
+}
 
-    /// Create a SHA1 from stream.
-    ///
-    /// # Errors:
-    ///
-    /// This function will return an error if there was an error reading from the stream.
-    pub fn sha1_stream<R: Read>(mut reader: R) -> Result<Hash, CryptError> {
-        let mut hasher = sha::Sha1::new();
+/// Create a SHA1 from stream. **Should not be used for security critical tasks!**
+///
+/// # Errors
+///
+/// This function will return an error if there was an error reading from the stream.
+pub fn sha1_stream<R: Read>(mut reader: R) -> Result<Hash, CryptError> {
+    let mut hasher = sha::Sha1::new();
 
-        let mut buf = [0u8; 1024];
-        loop {
-            let n = reader.read(&mut buf).map_err(CryptError::IoError)?;
+    let mut buf = [0u8; 1024];
+    loop {
+        let n = reader.read(&mut buf).map_err(CryptError::IoError)?;
 
-            if n == 0 {
-                break;
-            }
-
-            hasher.update(&buf[..n]);
+        if n == 0 {
+            break;
         }
 
-        let hash = hasher.finish();
-
-        Ok(Hash::Sha1(hash))
+        hasher.update(&buf[..n]);
     }
 
-    /// Create a SHA224 from stream.
-    ///
-    /// # Errors:
-    ///
-    /// This function will return an error if there was an error reading from the stream.
-    pub fn sha224_stream<R: Read>(mut reader: R) -> Result<Hash, CryptError> {
-        let mut hasher = sha::Sha224::new();
+    let hash = hasher.finish();
 
-        let mut buf = [0u8; 1024];
-        loop {
-            let n = reader.read(&mut buf).map_err(CryptError::IoError)?;
+    Ok(Hash::Sha1(hash))
+}
 
-            if n == 0 {
-                break;
-            }
+/// Create a SHA224 from stream.
+///
+/// # Errors
+///
+/// This function will return an error if there was an error reading from the stream.
+pub fn sha224_stream<R: Read>(mut reader: R) -> Result<Hash, CryptError> {
+    let mut hasher = sha::Sha224::new();
 
-            hasher.update(&buf[..n]);
+    let mut buf = [0u8; 1024];
+    loop {
+        let n = reader.read(&mut buf).map_err(CryptError::IoError)?;
+
+        if n == 0 {
+            break;
         }
 
-        let hash = hasher.finish();
-
-        Ok(Hash::Sha224(hash))
+        hasher.update(&buf[..n]);
     }
 
-    /// Create a SHA256 from stream.
-    ///
-    /// # Errors:
-    ///
-    /// This function will return an error if there was an error reading from the stream.
-    pub fn sha256_stream<R: Read>(mut reader: R) -> Result<Hash, CryptError> {
-        let mut hasher = sha::Sha256::new();
+    let hash = hasher.finish();
 
-        let mut buf = [0u8; 1024];
-        loop {
-            let n = reader.read(&mut buf).map_err(CryptError::IoError)?;
+    Ok(Hash::Sha224(hash))
+}
 
-            if n == 0 {
-                break;
-            }
+/// Create a SHA256 from stream.
+///
+/// # Errors
+///
+/// This function will return an error if there was an error reading from the stream.
+pub fn sha256_stream<R: Read>(mut reader: R) -> Result<Hash, CryptError> {
+    let mut hasher = sha::Sha256::new();
 
-            hasher.update(&buf[..n]);
+    let mut buf = [0u8; 1024];
+    loop {
+        let n = reader.read(&mut buf).map_err(CryptError::IoError)?;
+
+        if n == 0 {
+            break;
         }
 
-        let hash = hasher.finish();
-
-        Ok(Hash::Sha256(hash))
+        hasher.update(&buf[..n]);
     }
 
-    /// Create a SHA384 from stream.
-    ///
-    /// # Errors:
-    ///
-    /// This function will return an error if there was an error reading from the stream.
-    pub fn sha384_stream<R: Read>(mut reader: R) -> Result<Hash, CryptError> {
-        let mut hasher = sha::Sha384::new();
+    let hash = hasher.finish();
 
-        let mut buf = [0u8; 1024];
-        loop {
-            let n = reader.read(&mut buf).map_err(CryptError::IoError)?;
+    Ok(Hash::Sha256(hash))
+}
 
-            if n == 0 {
-                break;
-            }
+/// Create a SHA384 from stream.
+///
+/// # Errors
+///
+/// This function will return an error if there was an error reading from the stream.
+pub fn sha384_stream<R: Read>(mut reader: R) -> Result<Hash, CryptError> {
+    let mut hasher = sha::Sha384::new();
 
-            hasher.update(&buf[..n]);
+    let mut buf = [0u8; 1024];
+    loop {
+        let n = reader.read(&mut buf).map_err(CryptError::IoError)?;
+
+        if n == 0 {
+            break;
         }
 
-        let hash = hasher.finish();
-
-        Ok(Hash::Sha384(hash))
+        hasher.update(&buf[..n]);
     }
 
-    /// Create a SHA512 from stream.
-    ///
-    /// # Errors:
-    ///
-    /// This function will return an error if there was an error reading from the stream.
-    pub fn sha512_stream<R: Read>(mut reader: R) -> Result<Hash, CryptError> {
-        let mut hasher = sha::Sha512::new();
+    let hash = hasher.finish();
 
-        let mut buf = [0u8; 1024];
-        loop {
-            let n = reader.read(&mut buf).map_err(CryptError::IoError)?;
+    Ok(Hash::Sha384(hash))
+}
 
-            if n == 0 {
-                break;
-            }
+/// Create a SHA512 from stream.
+///
+/// # Errors
+///
+/// This function will return an error if there was an error reading from the stream.
+pub fn sha512_stream<R: Read>(mut reader: R) -> Result<Hash, CryptError> {
+    let mut hasher = sha::Sha512::new();
 
-            hasher.update(&buf[..n]);
+    let mut buf = [0u8; 1024];
+    loop {
+        let n = reader.read(&mut buf).map_err(CryptError::IoError)?;
+
+        if n == 0 {
+            break;
         }
 
-        let hash = hasher.finish();
-
-        Ok(Hash::Sha512(hash))
+        hasher.update(&buf[..n]);
     }
 
-    /// Verify a SHA hash from a stream.
-    /// This function will return true if the hash is valid, otherwise false.
-    ///
-    /// # Errors:
-    ///
-    /// This function will return an error if the hashing process fails or if the hash lenght is invalid.
-    pub fn verify_sha_stream<R: Read>(reader: R, hash: Hash) -> Result<bool, CryptError> {
-        let is_equal = match hash {
-            Hash::Sha1(h) => h == Sha::sha1_stream(reader)?.get_value(),
-            Hash::Sha224(h) => h == Sha::sha224_stream(reader)?.get_value(),
-            Hash::Sha256(h) => h == Sha::sha256_stream(reader)?.get_value(),
-            Hash::Sha384(h) => h == Sha::sha384_stream(reader)?.get_value(),
-            Hash::Sha512(h) => h == Sha::sha512_stream(reader)?.get_value(),
-        };
+    let hash = hasher.finish();
 
-        Ok(is_equal)
-    }
+    Ok(Hash::Sha512(hash))
+}
+
+/// Verify a SHA hash from a stream.
+/// This function will return true if the hash is valid, otherwise false.
+/// It is useful for verifying the integrity of data but **is not secure**.
+///
+/// # Errors
+///
+/// This function will return an error if the hashing process fails or if the hash lenght is invalid.
+pub fn verify_sha_stream<R: Read>(reader: R, hash: Hash) -> Result<bool, CryptError> {
+    let is_equal = match hash {
+        Hash::Sha1(h) => h == sha1_stream(reader)?.get_value(),
+        Hash::Sha224(h) => h == sha224_stream(reader)?.get_value(),
+        Hash::Sha256(h) => h == sha256_stream(reader)?.get_value(),
+        Hash::Sha384(h) => h == sha384_stream(reader)?.get_value(),
+        Hash::Sha512(h) => h == sha512_stream(reader)?.get_value(),
+    };
+
+    Ok(is_equal)
 }
 
 #[cfg(test)]
 mod test {
     use std::io::BufReader;
 
-    use crate::sha::{Hash, Hasher, Sha};
+    use crate::sha::{self, Hasher};
 
     #[test]
     fn sha1_test() {
         let buf = b"Sha1 Test";
 
-        let hash = Sha::sha(buf, Hasher::Sha1);
+        let hash = sha::sha(buf, Hasher::Sha1);
 
         assert_eq!(
             hash.get_value(),
@@ -197,7 +228,7 @@ mod test {
             ]
         );
 
-        let is_valid = Sha::verify_sha(buf, hash);
+        let is_valid = sha::verify_sha(buf, hash);
 
         assert!(is_valid);
     }
@@ -206,7 +237,7 @@ mod test {
     fn sha224_test() {
         let buf = b"Sha224 Test";
 
-        let hash = Sha::sha(buf, Hasher::Sha224);
+        let hash = sha::sha(buf, Hasher::Sha224);
 
         assert_eq!(
             hash.get_value(),
@@ -216,7 +247,7 @@ mod test {
             ]
         );
 
-        let is_valid = Sha::verify_sha(buf, hash);
+        let is_valid = sha::verify_sha(buf, hash);
 
         assert!(is_valid);
     }
@@ -225,7 +256,7 @@ mod test {
     fn sha256_test() {
         let buf = b"Sha256 Test";
 
-        let hash = Sha::sha(buf, Hasher::Sha256);
+        let hash = sha::sha(buf, Hasher::Sha256);
 
         assert_eq!(
             hash.get_value(),
@@ -236,7 +267,7 @@ mod test {
             ]
         );
 
-        let is_valid = Sha::verify_sha(buf, hash);
+        let is_valid = sha::verify_sha(buf, hash);
 
         assert!(is_valid);
     }
@@ -245,7 +276,7 @@ mod test {
     fn sha384_test() {
         let buf = b"Sha384 Test";
 
-        let hash = Sha::sha(buf, Hasher::Sha384);
+        let hash = sha::sha(buf, Hasher::Sha384);
 
         assert_eq!(
             hash.get_value(),
@@ -257,7 +288,7 @@ mod test {
             ]
         );
 
-        let is_valid = Sha::verify_sha(buf, hash);
+        let is_valid = sha::verify_sha(buf, hash);
 
         assert!(is_valid);
     }
@@ -266,7 +297,7 @@ mod test {
     fn sha512_test() {
         let buf = b"Sha512 Test";
 
-        let hash = Sha::sha(buf, Hasher::Sha512);
+        let hash = sha::sha(buf, Hasher::Sha512);
 
         assert_eq!(
             hash.get_value(),
@@ -279,7 +310,7 @@ mod test {
             ]
         );
 
-        let is_valid = Sha::verify_sha(buf, hash);
+        let is_valid = sha::verify_sha(buf, hash);
 
         assert!(is_valid);
     }
@@ -289,7 +320,7 @@ mod test {
         let buf = b"Sha1 Stream Test";
         let reader = BufReader::new(&buf[..]);
 
-        let hash = Sha::sha1_stream(reader).unwrap();
+        let hash = sha::sha1_stream(reader).unwrap();
 
         assert_eq!(
             hash.get_value(),
@@ -300,7 +331,7 @@ mod test {
         );
 
         let reader = BufReader::new(&buf[..]);
-        let is_valid = Sha::verify_sha_stream(reader, hash).unwrap();
+        let is_valid = sha::verify_sha_stream(reader, hash).unwrap();
 
         assert!(is_valid);
     }
@@ -310,7 +341,7 @@ mod test {
         let buf = b"Sha224 Stream Test";
         let reader = BufReader::new(&buf[..]);
 
-        let hash = Sha::sha224_stream(reader).unwrap();
+        let hash = sha::sha224_stream(reader).unwrap();
 
         assert_eq!(
             hash.get_value(),
@@ -321,7 +352,7 @@ mod test {
         );
 
         let reader = BufReader::new(&buf[..]);
-        let is_valid = Sha::verify_sha_stream(reader, hash).unwrap();
+        let is_valid = sha::verify_sha_stream(reader, hash).unwrap();
 
         assert!(is_valid);
     }
@@ -331,7 +362,7 @@ mod test {
         let buf = b"Sha256 Stream Test";
         let reader = BufReader::new(&buf[..]);
 
-        let hash = Sha::sha256_stream(reader).unwrap();
+        let hash = sha::sha256_stream(reader).unwrap();
 
         assert_eq!(
             hash.get_value(),
@@ -342,7 +373,7 @@ mod test {
         );
 
         let reader = BufReader::new(&buf[..]);
-        let is_valid = Sha::verify_sha_stream(reader, hash).unwrap();
+        let is_valid = sha::verify_sha_stream(reader, hash).unwrap();
 
         assert!(is_valid);
     }
@@ -352,7 +383,7 @@ mod test {
         let buf = b"Sha384 Stream Test";
         let reader = BufReader::new(&buf[..]);
 
-        let hash = Sha::sha384_stream(reader).unwrap();
+        let hash = sha::sha384_stream(reader).unwrap();
 
         assert_eq!(
             hash.get_value(),
@@ -364,7 +395,7 @@ mod test {
         );
 
         let reader = BufReader::new(&buf[..]);
-        let is_valid = Sha::verify_sha_stream(reader, hash).unwrap();
+        let is_valid = sha::verify_sha_stream(reader, hash).unwrap();
 
         assert!(is_valid);
     }
@@ -374,7 +405,7 @@ mod test {
         let buf = b"Sha512 Stream Test";
         let reader = BufReader::new(&buf[..]);
 
-        let hash = Sha::sha512_stream(reader).unwrap();
+        let hash = sha::sha512_stream(reader).unwrap();
 
         assert_eq!(
             hash.get_value(),
@@ -387,7 +418,7 @@ mod test {
         );
 
         let reader = BufReader::new(&buf[..]);
-        let is_valid = Sha::verify_sha_stream(reader, hash).unwrap();
+        let is_valid = sha::verify_sha_stream(reader, hash).unwrap();
 
         assert!(is_valid);
     }
