@@ -1,6 +1,6 @@
 [package]
 name = "cryptlib"
-version = "0.5.1"
+version = "0.5.0"
 description = "A simple cryptography library for encrypting and decrypting data based on openssl."
 edition = "2021"
 
