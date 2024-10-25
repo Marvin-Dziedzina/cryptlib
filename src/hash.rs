@@ -37,7 +37,7 @@
 
 use std::io::Read;
 
-use openssl::hash::Hasher;
+use openssl::{hash::Hasher, memcmp};
 
 mod hashes;
 
@@ -63,15 +63,15 @@ pub fn hasher(buf: &[u8], hash_type: HashType) -> Result<Hash, CryptError> {
 /// This method is useful for verifying the integrity of data but **is not secure**.
 pub fn verify_hash(buf: &[u8], hash: Hash) -> Result<bool, CryptError> {
     let is_valid = match hash {
-        Hash::Md5(h) => h == hasher(buf, HashType::Md5)?.get_value(),
-        Hash::Sha224(h) => h == hasher(buf, HashType::Sha224)?.get_value(),
-        Hash::Sha256(h) => h == hasher(buf, HashType::Sha256)?.get_value(),
-        Hash::Sha384(h) => h == hasher(buf, HashType::Sha384)?.get_value(),
-        Hash::Sha512(h) => h == hasher(buf, HashType::Sha512)?.get_value(),
-        Hash::Sha3_224(h) => h == hasher(buf, HashType::Sha3_224)?.get_value(),
-        Hash::Sha3_256(h) => h == hasher(buf, HashType::Sha3_256)?.get_value(),
-        Hash::Sha3_384(h) => h == hasher(buf, HashType::Sha3_384)?.get_value(),
-        Hash::Sha3_512(h) => h == hasher(buf, HashType::Sha3_512)?.get_value(),
+        Hash::Md5(h) => memcmp::eq(&h, hasher(buf, HashType::Md5)?.get_value()),
+        Hash::Sha224(h) => memcmp::eq(&h, hasher(buf, HashType::Sha224)?.get_value()),
+        Hash::Sha256(h) => memcmp::eq(&h, hasher(buf, HashType::Sha256)?.get_value()),
+        Hash::Sha384(h) => memcmp::eq(&h, hasher(buf, HashType::Sha384)?.get_value()),
+        Hash::Sha512(h) => memcmp::eq(&h, hasher(buf, HashType::Sha512)?.get_value()),
+        Hash::Sha3_224(h) => memcmp::eq(&h, hasher(buf, HashType::Sha3_224)?.get_value()),
+        Hash::Sha3_256(h) => memcmp::eq(&h, hasher(buf, HashType::Sha3_256)?.get_value()),
+        Hash::Sha3_384(h) => memcmp::eq(&h, hasher(buf, HashType::Sha3_384)?.get_value()),
+        Hash::Sha3_512(h) => memcmp::eq(&h, hasher(buf, HashType::Sha3_512)?.get_value()),
     };
 
     Ok(is_valid)
@@ -115,15 +115,15 @@ pub fn hasher_stream<R: Read>(mut reader: R, hash_type: HashType) -> Result<Hash
 /// This function will return an error if the hashing process fails or if the hash lenght is invalid.
 pub fn verify_hash_stream<R: Read>(reader: R, hash: Hash) -> Result<bool, CryptError> {
     let is_equal = match hash {
-        Hash::Md5(h) => h == hasher_stream(reader, HashType::Md5)?.get_value(),
-        Hash::Sha224(h) => h == hasher_stream(reader, HashType::Sha224)?.get_value(),
-        Hash::Sha256(h) => h == hasher_stream(reader, HashType::Sha256)?.get_value(),
-        Hash::Sha384(h) => h == hasher_stream(reader, HashType::Sha384)?.get_value(),
-        Hash::Sha512(h) => h == hasher_stream(reader, HashType::Sha512)?.get_value(),
-        Hash::Sha3_224(h) => h == hasher_stream(reader, HashType::Sha3_224)?.get_value(),
-        Hash::Sha3_256(h) => h == hasher_stream(reader, HashType::Sha3_256)?.get_value(),
-        Hash::Sha3_384(h) => h == hasher_stream(reader, HashType::Sha3_384)?.get_value(),
-        Hash::Sha3_512(h) => h == hasher_stream(reader, HashType::Sha3_512)?.get_value(),
+        Hash::Md5(h) => memcmp::eq(&h, hasher_stream(reader, HashType::Md5)?.get_value()),
+        Hash::Sha224(h) => memcmp::eq(&h, hasher_stream(reader, HashType::Sha224)?.get_value()),
+        Hash::Sha256(h) => memcmp::eq(&h, hasher_stream(reader, HashType::Sha256)?.get_value()),
+        Hash::Sha384(h) => memcmp::eq(&h, hasher_stream(reader, HashType::Sha384)?.get_value()),
+        Hash::Sha512(h) => memcmp::eq(&h, hasher_stream(reader, HashType::Sha512)?.get_value()),
+        Hash::Sha3_224(h) => memcmp::eq(&h, hasher_stream(reader, HashType::Sha3_224)?.get_value()),
+        Hash::Sha3_256(h) => memcmp::eq(&h, hasher_stream(reader, HashType::Sha3_256)?.get_value()),
+        Hash::Sha3_384(h) => memcmp::eq(&h, hasher_stream(reader, HashType::Sha3_384)?.get_value()),
+        Hash::Sha3_512(h) => memcmp::eq(&h, hasher_stream(reader, HashType::Sha3_512)?.get_value()),
     };
 
     Ok(is_equal)
