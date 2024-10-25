@@ -2,4 +2,5 @@
 
 ## Reporting a Vulnerability
 
-Create an issue and use the security vulnerability lable.
+For light security vulnerabilities please open an issue with the `security vulnerability` lable.
+For heavy security vulnerabilities like zero day exploits or remote code execution please report the security vulnerability in private.
