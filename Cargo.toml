@@ -1,6 +1,6 @@
 [package]
 name = "cryptlib"
-version = "0.5.2"
+version = "0.5.3"
 description = "A simple cryptography library for encrypting and decrypting data based on openssl."
 edition = "2021"
 
@@ -8,7 +8,6 @@ readme = "README.md"
 authors = ["Marvin Dziedzina"]
 repository = "https://github.com/Marvin-Dziedzina/cryptlib"
 license = "MIT"
-license-file = "LICENSE"
 
 keywords = ["cryptography", "encryption", "simple", "security", "openssl"]
 categories = ["cryptography"]
