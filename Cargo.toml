@@ -8,7 +8,6 @@ readme = "README.md"
 authors = ["Marvin Dziedzina"]
 repository = "https://github.com/Marvin-Dziedzina/cryptlib"
 license = "MIT"
-license-file = "LICENSE"
 
 keywords = ["cryptography", "encryption", "simple", "security", "openssl"]
 categories = ["cryptography"]
