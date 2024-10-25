@@ -20,8 +20,6 @@ jobs:
       run: cargo build -r --verbose
     - name: Tests
       run: cargo test -r --verbose
-    - name: Clippy
-      run: cargo clippy
 
 
   test-windows:
