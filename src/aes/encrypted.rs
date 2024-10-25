@@ -25,7 +25,7 @@ impl AesCiphertext {
     }
 
     /// Get components (is_stream, ciphertext, iv, aad, tag)
-    pub fn get_components(self) -> (bool, Vec<u8>, [u8; 16], Vec<u8>, [u8; 16]) {
+    pub fn get_components(self) -> (bool, Vec<u8>, [u8; 12], Vec<u8>, [u8; 16]) {
         (
             self.is_stream,
             self.ciphertext,

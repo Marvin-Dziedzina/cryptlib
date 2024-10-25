@@ -8,7 +8,7 @@ use crate::CryptError;
 /// Initialization Vector for AES encryption.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Iv {
-    bytes: [u8; 16],
+    bytes: [u8; 12],
 }
 impl Iv {
     /// Create a new `Iv` with random bytes.
@@ -23,17 +23,17 @@ impl Iv {
     }
 
     /// Get the IV bytes.
-    pub fn get_bytes(&self) -> &[u8; 16] {
+    pub fn get_bytes(&self) -> &[u8; 12] {
         &self.bytes
     }
 
-    /// Generate a 16 byte random iv with cryptographically strong pseudo-random bytes.
+    /// Generate a 12 byte random iv with cryptographically strong pseudo-random bytes.
     ///
     /// # Errors
     ///
     /// Returns a CryptError if `rand_bytes()` fails.
-    fn generate_iv() -> Result<[u8; 16], CryptError> {
-        let mut key: [u8; 16] = [0; 16];
+    fn generate_iv() -> Result<[u8; 12], CryptError> {
+        let mut key: [u8; 12] = [0; 12];
         rand_bytes(&mut key).map_err(CryptError::RandError)?;
 
         Ok(key)
@@ -50,6 +50,6 @@ mod tests {
     #[test]
     fn test_iv_creation() {
         let iv = crate::aes::Iv::new().unwrap();
-        assert_eq!(iv.get_bytes().len(), 16);
+        assert_eq!(iv.get_bytes().len(), 12);
     }
 }
