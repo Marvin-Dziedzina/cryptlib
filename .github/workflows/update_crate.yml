@@ -1,0 +1,22 @@
+name: Publish new version
+
+on:
+  release:
+    released:
+
+
+jobs:
+  publish-new-release:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Test
+      run: cargo test --verbose
+    - name: Release test
+      run: cargo test -r --verbose
+    - name: Login cargo
+      run: cargo login ${{ secret.CRATESIO_UPDATE_API_TOKEN }}
+    - name: Publish new version
+      run: cargo publish
